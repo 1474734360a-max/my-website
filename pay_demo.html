@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>支付确认</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  background: #f2f3f5;
+  padding: 30px 16px;
+}
+.card {
+  max-width: 460px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.06);
+  padding: 38px 26px 34px;
+  text-align: center;
+}
+.logo { width: 58px; height: 58px; display: block; margin: 0 auto; }
+.order-no { margin-top: 20px; font-size: 15px; font-weight: bold; color: #222; letter-spacing: .5px; }
+.protocol { margin-top: 10px; font-size: 12px; color: #b8b8b8; }
+
+.notice { margin-top: 26px; }
+.notice-item { color: #e85050; font-size: 13px; line-height: 1.75; margin: 13px 0; }
+
+.copy-tip { margin-top: 20px; font-size: 13px; color: #e85050; }
+
+.amount { margin-top: 26px; cursor: pointer; display: inline-block; user-select: none; }
+.amount .num { font-size: 30px; font-weight: bold; color: #333; }
+.amount .unit { font-size: 14px; color: #a0a0a0; margin-left: 8px; }
+.amount:active, .addr:active { opacity: .55; }
+.addr {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #a0a0a0;
+  letter-spacing: .3px;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.qr-box {
+  width: 212px; height: 212px;
+  margin: 26px auto 0;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.qr-box canvas, .qr-box img, .qr-box table { margin: 0 auto; }
+
+.cd-digits {
+  margin-top: 28px;
+  font-size: 24px;
+  color: #444;
+  font-family: "Courier New", Consolas, monospace;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+.cd-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 150px;
+  margin: 8px auto 0;
+  font-size: 12px;
+  color: #c2c2c2;
+}
+
+#toast {
+  position: fixed;
+  left: 50%; bottom: 70px;
+  transform: translateX(-50%) translateY(12px);
+  background: rgba(0,0,0,.78);
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: 22px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  max-width: 86vw;
+  line-height: 1.6;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- TRON 标志 -->
+  <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 2 L62 32 L32 62 L2 32 Z" fill="#00D395"/>
+    <path d="M15 20 H49 V28 H35.5 V56 H28.5 V28 H15 Z" fill="#fff"/>
+  </svg>
+
+  <div class="order-no">订单编号：202608311788160510474999</div>
+  <div class="protocol">当前USDT支付区块链网络协议为TRC20</div>
+
+  <!-- 注意事项 -->
+  <div class="notice">
+    <div class="notice-item">1. 到账金额需要与下方显示的金额一致，否则系统无法确认！！</div>
+    <div class="notice-item">2. 客户自身因为地址错误或金额错误产生的不到账与黑U速兑工作室无关</div>
+    <div class="notice-item">3. 支付成功后请等待区块链确认，通常1-5分钟内会自动跳转</div>
+    <div class="notice-item">4. 付款地址随机轮换，请勿长期保存，转错地址我司不承认任何责任</div>
+    <div class="notice-item">5. 任何问题请和灰鸽子工作室唯一客服联系【@huigeziu】</div>
+  </div>
+
+  <div class="copy-tip">尝试点击钱包地址或金额可直接复制 👆</div>
+
+  <!-- 金额（点击复制 30） -->
+  <div class="amount" title="点击复制" onclick="copyText('30')">
+    <span class="num">30</span><span class="unit">USDT</span>
+  </div>
+
+  <!-- 收款地址（点击复制） -->
+  <div class="addr" title="点击复制" onclick="copyText('TVy2NNV6cPYAr6W2c1Krj8Q8vbavZQmBhb')">TVy2NNV6cPYAr6W2c1Krj8Q8vbavZQmBhb</div>
+
+  <!-- 收款二维码（由地址实时生成） -->
+  <div class="qr-box" id="qrcode"></div>
+
+  <!-- 倒计时 -->
+  <div class="cd-digits" id="countdown">00 : 29 : 59</div>
+  <div class="cd-labels"><span>时</span><span>分</span><span>秒</span></div>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- 二维码库（bootcdn 加载失败时自动切换 jsdelivr） -->
+<script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+if (typeof QRCode === "undefined") {
+  document.write('<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@gh-pages/qrcode.min.js"><\/script>');
+}
+</script>
+<script>
+var ADDRESS = "TVy2NNV6cPYAr6W2c1Krj8Q8vbavZQmBhb";
+
+/* ---------- 生成收款二维码 ---------- */
+(function () {
+  var box = document.getElementById("qrcode");
+  if (typeof QRCode !== "undefined") {
+    new QRCode(box, {
+      text: ADDRESS,
+      width: 200,
+      height: 200,
+      colorDark: "#111111",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    // 备用方案：CDN 都失败时用图片接口兜底
+    var img = document.createElement("img");
+    img.src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=6&data=" + encodeURIComponent(ADDRESS);
+    img.width = 200;
+    img.height = 200;
+    img.alt = "收款二维码";
+    box.appendChild(img);
+  }
+})();
+
+/* ---------- 点击复制 ---------- */
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () {
+      showToast("已复制：" + text);
+    }, function () { fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); showToast("已复制：" + text); }
+  catch (e) { showToast("复制失败，请手动长按复制"); }
+  document.body.removeChild(ta);
+}
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function () { t.classList.remove("show"); }, 1800);
+}
+
+/* ---------- 支付倒计时（30分钟） ---------- */
+var totalSeconds = 30 * 60 - 1;
+var cdEl = document.getElementById("countdown");
+setInterval(function () {
+  if (totalSeconds <= 0) return;
+  totalSeconds--;
+  var h = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+  var m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+  var s = String(totalSeconds % 60).padStart(2, "0");
+  cdEl.textContent = h + " : " + m + " : " + s;
+}, 1000);
+</script>
+</body>
+</html>

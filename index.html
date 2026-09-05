@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="keywords" content=""/>
+    <meta name="description" content=""/>
+    <link href="/favicon.ico?v=1.3.9" rel="icon">
+    <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/static/css/i.css?v=1.3.9">
+
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/static/jquery.sliderBar.js"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <script src="/assets/static/pay.js?v=1.3.9"></script>
+    <script src="/assets/static/clipboard.js"></script>
+    <title>暗网黑U承兑平台 - 诚信第一的黑U兑换平台</title>
+    <!--start::HOOK-->
+    
+    
+    <!--end::HOOK-->
+</head>
+<body style="background: url('/assets/cache/images/202401210933536087017.jpg') fixed no-repeat;background-size: cover;">
+<div id="app">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light"
+         style="background-color: rgba(255,255,255,0.85) !important;">
+        <div class="container">
+           <div class="navbar-brand">
+               <a href="/">
+                   <img src="/favicon.ico" height="30px" style="border-radius: 50%;box-shadow: #f0d1d4 1px 1px 1px;">
+                    <span style="position: relative;top: 4px;left: 3px;font-weight: bold;color: #1396558a;">  暗网黑U承兑平台                 </span></a>
+
+           </div>
+            <div class="row">
+
+            <a class="nav-link" href="https://t.me/huigezis" target="_blank"  style="font-weight: bolder;"><i class="fa fa-twitch" aria-hidden="true"></i> 在线客服</a>                            </div>
+            <!--<div class="navbar-collapse">
+                <ul class="navbar-nav mr-auto"></ul>
+            </div>-->
+        </div>
+    </nav>
+
+<div class="content-wrapper">
+    <div class="container">
+
+        <!--            公告部分-->
+        <div class="card">
+            <div class="card-header">
+                <p class="card-title"><i class="fa fa-bullhorn" aria-hidden="true"></i> 公告</p>
+            </div>
+            <div class="card-block notice-content">
+                <p>🔥实时自动黑U兑换，所有U均来自海外静止三年以上冷钱包，可进交易所，72小时内冻结全额赔付！</p><p>🚀兑换比例1~100：1.1，101~200U：1.2，<font color="#c24f4a">201~500：1.4 (限时)，501~2000：1.65&nbsp;(限时)</font><br/>🔊注：本系统只支持TRC20协议下的交易，地址以T开头(支持)，0x(不支持),1(不支持),切勿充值其他资产，避免损失</p><table border="0" width="100%" cellpadding="0" cellspacing="0"><tbody><tr><th><p>1-100USDT 汇率1.1<br/>假设 您下单50USDT <br/>50X1.1=55 <br/>您将收到55USDT</p></th><th><p>101-200USDT 汇率 1.2<br/>假设 您下单200USDT <br/>200X1.2=240 <br/>您将收到240USDT</p></th><th><p><font color="#c24f4a">201-500USDT 汇率1.4<br/>假设 您下单1000USDT <br/>1000X1.4=1400 <br/>您将收到1400USDT</font></p><p><font color="#c24f4a">（限时汇率加赠）</font></p></th><th><p><font color="#c24f4a">501-2000USDT 汇率1.65<br/>假设 您下单2000USDT <br/>2000X1.65=3300 <br/>您将收到3300USDT</font></p><p><font color="#c24f4a">（限时汇率加赠）</font></p></th></tr></tbody></table><p><br/>🔊注：本工作室大量收购黑U，具体详询可以联系我们客服<a href="https://t.me/huigezis" target="_blank" style="font-family: &quot;Helvetica Neue&quot;, Helvetica, &quot;PingFang SC&quot;, Tahoma, Arial, sans-serif; font-size: 14px; text-align: var(--bs-body-text-align);">@h<span helvetica="" neue",="" helvetica,="" "pingfang="" sc",="" tahoma,="" arial,="" sans-serif;="" font-size:="" 14px;="" text-align:="" var(--bs-body-text-align);"="">uigezis</span></a><br/></p><a href="https://t.me/huigezis" target="_blank"></a><p><video src="/assets/cache/images/202401220940554180365.mp4" controls="controls" style="max-width:100%"></video></p>
+            </div>
+        </div>
+
+
+        <!-- 隐藏的商品分类和选择部分 -->
+        <div style="display: none">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title"><i class="fa fa-gratipay" aria-hidden="true"></i> 购买</p>
+                </div>
+                <div class="card-block">
+                    <fieldset class="form-group">
+                        <label for="type" style="font-size: 14px;">请选择商品分类</label>
+                        <div id="type" class="category">
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-group product">
+                        <label for="product" style="font-size: 14px;">请选择商品</label>
+                        <div id="product">
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+
+        <!--            商品简介部分-->
+        <div class="card animated shopInfoHtml" style="display: none;">
+            <div class="card-header">
+                <p class="card-title">商品信息</p>
+            </div>
+            <form class="commodity"></form>
+
+            <div class="sliderbar-container">
+                <div class="title"><i></i> 联系客服</div>
+                <div class="body">
+                  
+                    <a class="button-click service-url" style="line-height: 22px;margin-right: 0;color: #ff8888;"
+                       target="_blank"><i
+                                class="fa fa-user-plus"></i> tg客服</a>
+                </div>
+            </div>
+
+        <!--            指定购买部分-->
+        <div class="card animated specified" style="display: none;">
+            <div class="card-header">
+                <p class="card-title"></p>
+            </div>
+            <div class="card-block anticipation">
+            </div>
+        </div>
+
+
+        <!--            付款部分-->
+        <div class="card animated fadeInLeft" style="display: none;">
+            <div class="card-header">
+                <p class="card-title">付款方式</p>
+            </div>
+            <div class="card-block">
+                <div class="row pay_type" style="margin-left: 0px;"></div>
+            </div>
+        </div>
+
+
+<!-- USDT转账数据 -->
+<div class="card">
+    <div class="card-header">
+        <p class="card-title">USDT下发记录</p>
+    </div>
+    <div class="card-block">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="min-width: 120px;">承兑时间</th>
+                        <th style="min-width: 200px;">承兑地址</th>
+                        <th style="text-align:right; min-width: 100px;">承兑金额</th>
+                    </tr>
+                </thead>
+                <tbody id="usdtTransactions">
+                    <tr>
+                        <td colspan="3" style="text-align:center;">加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 移动端表格优化 */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: none;
+        margin-bottom: 0;
+    }
+    
+    .table-responsive table {
+        font-size: 12px;
+    }
+    
+    .table-responsive th,
+    .table-responsive td {
+        padding: 8px 4px;
+        white-space: nowrap;
+    }
+    
+    .table-responsive th:nth-child(2),
+    .table-responsive td:nth-child(2) {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-responsive table {
+        font-size: 11px;
+    }
+    
+    .table-responsive th,
+    .table-responsive td {
+        padding: 6px 2px;
+    }
+    
+    .table-responsive th:nth-child(2),
+    .table-responsive td:nth-child(2) {
+        max-width: 120px;
+    }
+}
+
+/* 公告中的汇率表格移动端优化 */
+.notice-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+.notice-content table th,
+.notice-content table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    vertical-align: top;
+}
+
+@media (max-width: 768px) {
+    .notice-content table {
+        font-size: 12px;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .notice-content table tbody,
+    .notice-content table thead,
+    .notice-content table tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    .notice-content table th,
+    .notice-content table td {
+        padding: 6px 4px;
+        font-size: 11px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+}
+
+@media (max-width: 480px) {
+    .notice-content table {
+        font-size: 10px;
+    }
+    
+    .notice-content table th,
+    .notice-content table td {
+        padding: 4px 2px;
+        font-size: 9px;
+        line-height: 1.2;
+    }
+    
+    /* 将表格改为垂直布局 */
+    .notice-content table,
+    .notice-content table tbody,
+    .notice-content table thead,
+    .notice-content table tr,
+    .notice-content table th,
+    .notice-content table td {
+        display: block;
+        width: 100%;
+    }
+    
+    .notice-content table tr {
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        padding: 8px;
+        background: #f9f9f9;
+    }
+    
+    .notice-content table th,
+    .notice-content table td {
+        border: none;
+        padding: 4px 0;
+        text-align: left;
+    }
+}
+</style>
+
+<script>
+function loadUsdtTransactions() {
+    const apiUrl = 'https://api.trongrid.io/v1/accounts/TDoXUNZ6PajKuiUkcYg3EDSV9bnqGqsbcf/transactions/trc20';
+    const params = {
+        only_to: false,
+        only_from: true,
+        limit: 15,
+        contract_address: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+    };
+
+    fetch(`${apiUrl}?${new URLSearchParams(params)}`, {
+        headers: {
+            'Accept': 'application/json',
+            'TRON-PRO-API-KEY': '2838b779-2f4d-43aa-8689-a57cf23d493d'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const tbody = document.getElementById('usdtTransactions');
+        if (data && data.data && data.data.length > 0) {
+            tbody.innerHTML = data.data.map(tx => {
+                const timestamp = new Date(tx.block_timestamp).toLocaleString();
+                const amount = (tx.value / 1000000).toFixed(2);
+                return `
+                    <tr>
+                        <td>${timestamp}</td>
+                        <td>${tx.to}</td>
+                        <td style="text-align:right;">${amount} USDT</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">暂无USDT转账数据或API访问出错</td></tr>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('usdtTransactions').innerHTML = 
+            '<tr><td colspan="3" style="text-align:center;">数据加载失败</td></tr>';
+        console.error('Error:', error);
+    });
+}
+
+// 首次加载
+loadUsdtTransactions();
+
+// 每60秒刷新一次
+setInterval(loadUsdtTransactions, 60000);
+</script>
+
+
+
+<div class="card">
+            <div class="card-header">
+                <p class="card-title"><i class="fa fa-bullhorn" aria-hidden="true"></i> 常见问题</p>
+            </div>
+            <div class="card-block">
+               
+<p>1、什么是黑U</p><p>黑U就是我们通过特殊方式从一些境外的常年静止的冷钱包，以及博彩网站的大额账户通过特殊手段获取来的U，由于数量巨大我们需要打散快速变现（购买后48小时内冻结我们包赔）<br/></p><p>2、是否支持验证<br/></p><p>网站首页的下发记录即为我们实时的下发记录，支持一切验证，如需视频验证，请联系我们的Telegram客服@huigezis，为了避免无效沟通，请您确认您已持有正常的USDT再来验证。<br/></p><p>3、是否支持测试<br/></p><p>我们的自助下单系统不限制购买金额，直接下单即可。<br/></p><p>4、每天有没有交易次数限制<br/></p><p>我们没有交易次数限制，但是建议您每次购买到的黑U消化完成后再进行下一次购买，另外不要用我们给您的黑U再转回给我们进行购买，黑U回流永久封禁。</p><p>5、你们自己为什么不消化<br/></p><p>我们每天也在进行内部消化，但无论是交易所还是走承兑，都没办法消化这么多的量，另一个出于安全考虑，我们需要把集中来的黑U尽可能多的下发到更多的账户里，这样才能更容易混淆失主的链上追寻。<br/></p><p>6、黑U能不能正常交易<br/></p><p>黑U和常态U没有区别，可以进交易所，也可以正常进行转账，你可以用来做一切正常U可以做的事。<br/></p><p>7、购买流程是怎么样的<br/></p><p>我们的网站主页可以自助下单，输入你要购买的数量，然后填写你的接收地址，支付成功后我们会在1-5分钟内给您下发成功。<br/></p><p>8、是否支持人民币拿货<br/></p><p>目前我们仅支持泰铢、美元两种法币交易，人民币收款账户价格太高，冻结概率太大，所以暂时不考虑开通人民币购买渠道。<br/></p><p>9、代理如何加入<br/></p><p>我们的代理是免费加入的，单笔购买超过3000USDT即可成为代理，成为代理享有以下权益</p><p>代理专属汇率:1.5</p><p>免费赠送代理网站源码，可自行开拓市场<br/></p><p>代理每累计购买10000USDT汇率就增加0.01<br/></p><p>成为代理后无论单笔购买多少USDT都按照代理专属汇率下发<br/></p><p>例如您已成为代理，当前已经交易超过20000USDT，那么您的代理中心汇率即为1.52，购买1000USDT可获得1520USDT<br/></p><p>10、我还需要准备些什么？<br/></p><p>交易所或冷钱包都可以，交易所建议火币，欧易，币安，芝麻开门等交易所，冷钱包推荐比特派、Tronlink、TP、IM等等</p><p><br/></p><p>更多问题您可以随时咨询我们的在线客服，下单前请务必关注官方TG订阅号获取最新公告与资讯！</p><p>--------------------------------------------------------------<br/></p><p><span style="color: #548DD4; font-size: 16px;"><strong>本站7x24小时开启多维网络查重技术，严禁重复多次提交未支付订单，如被查重系统发现，地址将被永久拉入黑名单禁止交易，不予申诉。</strong></span></p><p>--------------------------------------------------------------</p><p><br/></p>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+</div>
+
+<script>
+    const setting_cache = 0;
+    const setting_cache_expire = 60;
+
+    let commodityHtml = '<div class="card-block">\n' +
+        '                    <div class="row">\n' +
+        '                        <div class="col-md-5 description"></div>\n' +
+        '                        <div class="col-md-7">\n' +
+        '                            <h4 class="productName" style="margin-bottom: 10px;"></h4>\n' +
+        '                            <p style="display: none;" class="seckill_status">限时秒杀： <span class="text-danger seckill"></span></p>\n' +
+        '                            <p>商品单价： <span class="text-success price"></span></p>\n' +
+        '                            <p>承兑时效： <span class="badge badge-pill text-white cardType"></span></p>\n' +
+        '                            <fieldset class="form-group">\n' +
+        '                                <label style="display: inline-block;">回U地址：</label>\n' +
+        '                                <input class="form-control round contact" name="contact" placeholder="">\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group fieldset-password" style="display: none;">\n' +
+        '                                <label style="display: inline-block;">查询密码：</label>\n' +
+        '                                <input class="form-control round password" name="password" type="password"\n' +
+        '                                       placeholder="请设置您的订单查询密码(6位以上)">\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group voucher-view" style="display: none;">\n' +
+        '                                <label style="display: inline-block;">优惠代卷：</label>\n' +
+        '                                <input class="form-control round voucher" onchange="getTradeAmount()" name="coupon"\n' +
+        '                                       placeholder="如果您有优惠卷可以填写优惠卷，没有可不填写">\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group race-view" style="display: none;">\n' +
+        '                                <label style="display: inline-block;">选择种类：</label>\n' +
+        '                                 <span class="race-list"></span>\n' +
+        '                            </fieldset>\n' +
+        '                            <fieldset class="form-group">\n' +
+        '                                <label>承兑数量：</label>\n' +
+        '                                <input class="form-control round buyNum" onchange="getTradeAmount()" name="num"\n' +
+        '                                       type="number" style="width: 10%;" value="1">\n' +
+        '                                <span style="margin-left: 10px;display: none;" class="kucunView"> 剩余库存: <span\n' +
+        '                                        class="badge badge-pill badge-success text-white card_count">0</span></span>\n' +
+        '                            </fieldset><p class="widget"></p>\n' +
+        '                            <p><span class="purchase_count" style="font-size: 14px;font-weight: bold;color: #c59de9;display: none;"></span></p>\n' +
+        '                            \n' +
+        '                            <p style="" class="payAmountView">承兑金额： <span><b style="font-size:16px;color: #f757b7;font-weight: bold;" class="payAmount"></b></span></p>\n' +
+        '                            <p style="" class="payAmountView">当前汇率： <span><b style="font-size:16px;color: #f757b7;font-weight: bold;" class="bili"></b></span></p>\n' +
+        '                            <p style="" class="payAmountView">计算公式： <span><b style="font-size:16px;color: #f757b7;font-weight: bold;" class="usdt"></b></span></p>\n' +
+        '                            <p style="" class="payAmountView">应到金额： <span><b style="font-size:16px;color: #f757b7;font-weight: bold;" class="bala"></b></span></p>\n' +
+        '                            <fieldset class="form-group wholesale" style="display: none;">\n' +
+        '                                <div style="font-size: 12px;color: #ff5aa6;font-weight: bold;"\n' +
+        '                                     class="wholesaleHtml"></div>\n' +
+        '                            </fieldset>\n' +
+        '                        </div>\n' +
+        '                    </div>\n' +
+        '                </div>';
+    let switchElement = function (obj) {
+        $('.checked').removeClass('checked');
+        $(obj).addClass('checked');
+    };
+
+    let productInstance = $('#product');
+    let globalCommodityId = 0;
+    let globalRaceId = "";
+    let seckillPid = 0;
+    let defaultCategory = "1";
+    let defaultCommodity = "";
+    let draftStatus = 0;
+    let inventoryHidden = 0;
+
+//-----------------------------------获取分类------------------------------------------
+Pay.getCategory(list => {
+    if (list.length === 0) return;
+    
+    list.forEach(category => {
+        $(".category").append('<span class="category-' + category.id + ' button-click category-button ' + 
+            (category.commodity_count == 0 ? 'empty-commodity' : '') + '" data-id="' + category.id + '">' + 
+            (category.icon ? '<img class="commodity-icon" src="' + category.icon + '">' : '') + ' ' + 
+            category.name + '</span>');
+    });
+    
+    // 找到第一个有效分类并自动获取其商品
+    let firstValidCategory = list.find(category => category.commodity_count > 0);
+    if (firstValidCategory) {
+        getCommodity(null, firstValidCategory.id);
+    }
+});
+
+//-----------------------------------获取商品------------------------------------------
+function getCommodity(obj, categoryId) {
+    Pay.getCommodityAll(categoryId, list => {
+        if (list.length === 0) {
+            layer.msg("该分类下没有商品");
+            return;
+        }
+        
+        // 直接获取第一个商品的详情
+        if (list[0]) {
+            getCommodityInfo(null, list[0].id);
+        }
+    });
+}
+
+
+
+    //-----------------------------------获取预选卡密--------------------------------------
+    function checkbox(obj) {
+        let state = $(obj).prop("checked");
+        $('input[name=card_id]:checked').prop("checked", false);
+        if (state === true) {
+            $(obj).prop("checked", true);
+        } else {
+            $(obj).prop("checked", false);
+        }
+    }
+
+    function getDraftCard(commodityId, page) {
+        Pay.getDraftCard(commodityId, page, globalRaceId, res => {
+            let next = res.current_page + 1;
+            let prev = res.current_page - 1;
+            if (next >= res.last_page) {
+                next = res.last_page;
+            }
+            if (prev <= 1) {
+                prev = 1;
+            }
+            $('.anticipation').show(150);
+            $('.anticipation').html('<table><thead><tr><th><button ' + (res.current_page <= 1 ? 'disabled' : '') + ' type="button" onclick="getDraftCard(' + commodityId + ',' + prev + ')">上一页</button> <button ' + (res.current_page >= res.last_page ? 'disabled' : '') + ' type="button" onclick="getDraftCard(' + commodityId + ',' + next + ')">下一页</button></th></tr></thead><tbody class="draftCard"></tbody></table>');
+
+            if (res.data.length == 0) {
+                $('.draftCard').append('<tr><td style="text-align: center;">暂无数据</td></tr>');
+                return;
+            }
+
+            res.data.forEach(item => {
+                $('.draftCard').append('<tr><td><label><input type="checkbox" onclick="getTradeAmount()" onchange="checkbox(this)" name="card_id" value="' + item.id + '"> ' + item.draft + '</label></td></tr>');
+            });
+        });
+    }
+
+    //-----------------------------------获取商品详情--------------------------------------
+
+    function getCommodityInfo(obj, commodityId) {
+        $('.shopInfoHtml').hide(150);
+        $('.fadeInLeft').hide(150);
+        $('.specified').hide(150);
+        $('.commodity').html("");
+        
+        $('.pay_type').show();
+
+        globalRaceId = "";
+        globalCommodityId = commodityId;
+        switchElement(obj);
+        Pay.getCommodityDetail(commodityId, commodity => {
+            $('.service-qq').attr("href", "https://wpa.qq.com/msgrd?v=1&uin=" + commodity.service_qq);
+            $('.service-url').attr("href", commodity.service_url);
+
+            if (commodity.owner) {
+                $('.service-avatar').attr("src", commodity.owner.avatar);
+                $('.service-nickname').css({"color": "#ff00e0a1"}).html(commodity.owner.username);
+            } else {
+                $('.service-avatar').attr("src", "/favicon.ico");
+                $('.service-nickname').css({"color": "#e093ff"}).html("自营商品");
+            }
+
+            $('.commodity').html(commodityHtml);
+            $('.shopInfoHtml').show(150);
+            $('.fadeInLeft').show(150);
+
+            $('.productName').html(commodity.name);
+            $('.description').html(commodity.description);
+
+            if (commodity.minimum > 0) {
+                $('.buyNum').val(commodity.minimum).change();
+            }
+
+
+            $('.description').find("img").click(function () {
+                let imageUrl = $(this).attr("src");
+
+                let img = new Image()
+                img.src = imageUrl;
+                img.onload = function () {
+                    if (img.width >= window.innerWidth) {
+                        img.width = window.innerWidth * 0.9;
+                    }
+
+                    if (img.height >= window.innerHeight) {
+                        img.height = window.innerHeight * 0.9;
+                    }
+
+                    // 打印
+                    layer.open({
+                        type: 1,
+                        title: false,
+                        closeBtn: 0, //不显示关闭按钮
+                        anim: 5,
+                        area: [img.width + "px", img.height + "px"],
+                        shadeClose: true, //开启遮罩关闭
+                        content: '<img  src="' + imageUrl + '" style="width:' + img.width + 'px;height:' + img.height + 'px">'
+                    });
+                }
+            });
+
+            //限时秒杀
+            clearInterval(seckillPid);
+            if (commodity.seckill_status == 1) {
+                $('.seckill_status').show();
+                let seckillStartTime = new Date(commodity.seckill_start_time).getTime();
+                let seckillEndTime = new Date(commodity.seckill_end_time).getTime();
+                var nowTime = new Date().getTime();
+
+                let fnEnd = () => {
+                    let langTime = Pay.getLangTime(new Date().getTime(), seckillEndTime);
+                    $('.seckill').html("<b style='color: #0fb183;'>还剩" + langTime.days + "天" + langTime.hours + "时" + langTime.minutes + "分" + langTime.seconds + "秒结束</b>");
+                    if (langTime.days <= 0 && langTime.hours <= 0 && langTime.minutes <= 0 && langTime.seconds <= 0) {
+                        $('.seckill').html("<b style='color: #9d9d9d;'>已结束</b>");
+                        $('.fadeInLeft').hide();
+                        clearInterval(seckillPid);
+                    }
+                };
+                let fnStart = () => {
+                    let langTime = Pay.getLangTime(new Date().getTime(), seckillStartTime);
+                    $('.seckill').html("<b style='color: #e22727;'>" + langTime.days + "天" + langTime.hours + "时" + langTime.minutes + "分" + langTime.seconds + "秒后开始抢购</b>");
+                    if (langTime.days <= 0 && langTime.hours <= 0 && langTime.minutes <= 0 && langTime.seconds <= 0) {
+                        clearInterval(seckillPid);
+                        $('.fadeInLeft').show();
+                        fnEnd();
+                        seckillPid = setInterval(fnEnd, 1000);
+                    }
+                };
+
+                if (nowTime >= seckillStartTime && nowTime <= seckillEndTime) {
+                    $('.fadeInLeft').show();
+                    fnEnd();
+                    //秒杀正在进行当中
+                    seckillPid = setInterval(fnEnd, 1000);
+                } else if (nowTime < seckillStartTime) {
+                    $('.fadeInLeft').hide();
+                    fnStart();
+                    seckillPid = setInterval(fnStart, 1000);
+                } else if (nowTime > seckillEndTime) {
+                    $('.fadeInLeft').hide();
+                    $('.seckill').html("<b style='color: #9d9d9d;'>已结束</b>");
+                }
+
+            }
+
+                        $('.price').html('¥' + commodity.price);
+            $('.payAmount').html("¥" + commodity.price);
+
+            //未登录
+            // 所有商品直接自助购买
+                        inventoryHidden = commodity.inventory_hidden;
+            if (commodity.delivery_way === 0) {
+                $('.cardType').html("自动发货").addClass("badge-success");
+                $('.kucunView').show();
+                if (commodity.inventory_hidden == 1) {
+                    if (commodity.card <= 0) {
+                        $('.card_count').removeClass("badge-success").addClass("badge-dark").html("已售罄");
+                    } else if (commodity.card <= 5) {
+                        $('.card_count').removeClass("badge-success").addClass("badge-danger").html("即将售罄");
+                    } else if (commodity.card <= 20) {
+                        $('.card_count').removeClass("badge-success").addClass("badge-warning").html("一般");
+                    } else if (commodity.card > 20) {
+                        $('.card_count').html("充足");
+                    }
+                } else {
+                    $('.card_count').html(commodity.card);
+                }
+
+            } else {
+                $('.cardType').html("实时承兑").addClass("badge-danger");
+            }
+
+            let contactType = ["网络协议为TRC20地址", "手机号", "邮箱", "QQ号"];
+
+            $('.contact').attr("placeholder", "请输入您的 TRC20 地址以T开头.");
+
+            if (commodity.login) {
+                $('.contact').parent().hide();
+            }
+
+            //
+            if (commodity.password_status === 1 && !commodity.login) {
+                $('.fieldset-password').show();
+            }
+
+
+            if (commodity.coupon === 1) {
+                $('.voucher-view').show();
+            }
+
+            if (commodity.purchase_count > 0) {
+                $('.purchase_count').html("该商品每人累计购买最多" + commodity.purchase_count + "个");
+                $('.purchase_count').show();
+            }
+
+            //控件
+            if (commodity.widget) {
+                let parse = JSON.parse(commodity.widget);
+                if (parse != null) {
+                    parse.forEach(widget => {
+                        if (widget.type == "text" || widget.type == "password" || widget.type == "number") {
+                            $('.widget').append('<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label><input type="' + widget.type + '" class="form-control round" name="' + widget.name + '" placeholder="' + widget.placeholder + '"></fieldset>');
+                        } else if (widget.type == "select") {
+                            let html = '<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label><select name="' + widget.name + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width:auto;height: auto;display: inline-block;padding: 0 0;"><option value="">' + widget.placeholder + '</option>';
+                            let dict = widget.dict.split(",");
+                            for (let i = 0; i < dict.length; i++) {
+                                let sp = dict[i].split("=");
+                                if (sp.length != 2) {
+                                    continue;
+                                }
+                                html += '<option value="' + sp[1] + '">' + sp[0] + '</option>'
+                            }
+                            html += "</select></fieldset>"
+                            $('.widget').append(html);
+                        } else if (widget.type == "textarea") {
+                            $('.widget').append('<fieldset class="form-group"><textarea name="' + widget.name + '" placeholder="' + widget.placeholder + '" style="border-radius: 5px;border: 1px dashed #80b9f594;width: 100%;height: 100px;"></textarea></fieldset>');
+                        } else if (widget.type == "checkbox") {
+                            let html = '<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label>';
+                            let dict = widget.dict.split(",");
+                            for (let i = 0; i < dict.length; i++) {
+                                let sp = dict[i].split("=");
+                                if (sp.length != 2) {
+                                    continue;
+                                }
+                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '[]" type="checkbox" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                            }
+                            html += '</fieldset>';
+                            $('.widget').append(html);
+                        } else if (widget.type == "radio") {
+                            let html = '<fieldset class="form-group"><label style="display: inline-block;">' + widget.cn + '：</label>';
+                            let dict = widget.dict.split(",");
+                            for (let i = 0; i < dict.length; i++) {
+                                let sp = dict[i].split("=");
+                                if (sp.length != 2) {
+                                    continue;
+                                }
+                                html += '<label style="margin-right: 10px;"><input name="' + widget.name + '" type="radio" value="' + sp[1] + '"> ' + sp[0] + '</label>';
+                            }
+                            html += '</fieldset>';
+                            $('.widget').append(html);
+                        }
+
+                    });
+                }
+            }
+
+
+            $('.clipboard').attr("data-clipboard-text", commodity.share_url);
+
+            $('.clipboard').click(function () {
+                var clipboard = new ClipboardJS(".clipboard");
+                clipboard.on('success', function (e) {
+                    layer.msg("分享链接已经复制成功了，赶快发给好友吧！")
+                });
+            });
+
+            $('.captchaImage').click(function () {
+                captchaImage();
+            });
+
+
+            //渲染商品种类
+            if (commodity.hasOwnProperty('race') && commodity.race) {
+                $('.race-view').show();
+                let raceIndex = 0;
+                for (let key in commodity.race) {
+                    if (raceIndex == 0) {
+                        globalRaceId = key;
+                    }
+                    $('.race-list').append('<span onclick="raceClick(this,\'' + key + '\')" class="race-click button-click ' + (raceIndex == 0 ? 'checked' : '') + '" style="padding: 0 8px;font-size: 14px;border-radius: 10px;">' + key + '</span>');
+                    raceIndex++;
+                }
+
+                let categoryWholesale = function () {
+                    //批发渲染
+                    let categoryWholesale = commodity.category_wholesale;
+                    if (categoryWholesale && categoryWholesale.hasOwnProperty(globalRaceId)) {
+                        let rules = categoryWholesale[globalRaceId];
+                        let ws = [];
+                        for (const ruleKey in rules) {
+                            ws[ruleKey] = rules[ruleKey];
+                        }
+                        let x = '';
+                        ws.forEach((money, num) => {
+                            x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                        });
+                        if (ws.length > 0) {
+                            $('.wholesale').show();
+                            $('.wholesaleHtml').html(x);
+                        } else {
+                            $('.wholesale').hide();
+                        }
+                    } else {
+                        $('.wholesale').hide();
+                    }
+                }
+
+                categoryWholesale();
+
+                $('.race-click').click(function () {
+                    categoryWholesale();
+                });
+            } else {
+                let wholesale = commodity.wholesale;
+                if (wholesale && Object.keys(wholesale).length > 0) {
+                    let ws = [];
+                    for (const ruleKey in wholesale) {
+                        ws[ruleKey] = wholesale[ruleKey];
+                    }
+                    let x = '';
+                    ws.forEach((money, num) => {
+                        x += '<div class="lot_string">一次性购买' + num + '张，单价自动调整为：<b>¥' + money + '</b></div>';
+                    });
+                    if (ws.length > 0) {
+                        $('.wholesale').show();
+                        $('.wholesaleHtml').html(x);
+                    } else {
+                        $('.wholesale').hide();
+                    }
+                }
+            }
+
+            if (commodity.draft_status === 1) {
+                draftStatus = 1;
+                $('.specified').show(150);
+                $('.specified .card-title').html('自选加价:<b style="color: #eba0a0;font-weight: bold;">' + commodity.draft_premium + "元</b>");
+                getDraftCard(commodity.id, 1);
+            } else {
+                draftStatus = 0;
+            }
+
+            $('html,body').animate({
+                scrollTop: $('.shopInfoHtml').offset().top - 100
+            }, 'slow');
+        });
+    }
+
+    function getTradeAmount() {
+        
+        let num = $('input[name=num]').val();
+        
+        let bili1 = "1.1";
+			              
+		let bili2 = "1.2";
+							
+		let bili3 = "1.4";
+			                
+		let bili4 = "1.65";
+		
+		var bili = 0;
+		
+			                
+        if (num <= 0) {
+            $('input[name=num]').val(1);
+            num = 1;
+        }
+        
+        if(num <= 100){
+			                    
+		    bili = bili1;
+		}
+			                
+		if(num <= 200 && num > 100){
+			                    
+		    bili = bili2;
+		}
+			                
+		if(num <= 500 && num > 200){
+			                    
+			bili = bili3;
+		}
+			                
+		if(num > 500){
+			                    
+			bili = bili4;
+		}
+        
+        bala = numMulti(num,bili);
+
+        // 本地填充汇率三字段（不依赖后端 API）
+        $('.bili').html(bili);
+        $('.usdt').html(num + ' * ' + bili);
+        $('.bala').html(bala + " USDT");
+
+        let cardId = $('input[name=card_id]:checked').val();
+        let coupon = $('input[name=coupon]').val();
+        if (cardId === undefined) {
+            cardId = 0;
+        }
+        Pay.getTradeAmount(globalCommodityId, coupon, cardId, num, globalRaceId, res => {
+            $('.payAmount').html("¥" + res.amount + " USDT");
+            $('.price').html("¥" + res.price);
+            if (res.hasOwnProperty("card_count")) {
+                let instance = $('.card_count');
+                if (inventoryHidden == 1) {
+                    if (res.card_count <= 0) {
+                        instance.removeClass("badge-success").addClass("badge-dark").html("已售罄");
+                    } else if (res.card_count <= 5) {
+                        instance.removeClass("badge-success").addClass("badge-danger").html("即将售罄");
+                    } else if (res.card_count <= 20) {
+                        instance.removeClass("badge-success").addClass("badge-warning").html("一般");
+                    } else if (res.card_count > 20) {
+                        instance.addClass("badge-success").html("充足");
+                    }
+                } else {
+                    instance.html(res.card_count);
+                }
+            }
+        });
+    }
+
+    function numMulti(num1, num2) {
+				var baseNum = 0;
+				try {
+					baseNum += num1.toString().split(".")[1].length;
+				} catch (e) {
+				}
+				try {
+					baseNum += num2.toString().split(".")[1].length;
+				} catch (e) {
+				}
+				return Number(num1.toString().replace(".", "")) * Number(num2.toString().replace(".", "")) / Math.pow(10, baseNum);
+			};
+			
+    function captchaImage() {
+            }
+
+    function Trade(payId) {
+        // 反诈演示环境：验证输入后直接带参数跳转至反诈教学收银台
+        let contact = $('input[name=contact]').val();
+        let num = $('input[name=num]').val() || 30;
+
+        if (!contact || !contact.trim()) {
+            layer.msg("请输入您的回U地址以进行演示测试");
+            return;
+        }
+
+        // 跳转至反诈演示收银台
+        window.location.href = '/pay_demo.html?num=' + encodeURIComponent(num) + '&contact=' + encodeURIComponent(contact);
+        return;
+
+        let cardId = $('input[name=card_id]:checked').val();
+        if (cardId === undefined) {
+            cardId = 0;
+        }
+
+        let arrayToObject = Pay.arrayToObject($('.commodity').serializeArray());
+        arrayToObject.commodity_id = globalCommodityId;
+        arrayToObject.card_id = cardId;
+        arrayToObject.pay_id = payId;
+        arrayToObject.device = Pay.device();
+        arrayToObject.from = localStorage.hasOwnProperty("from_id") ? localStorage.getItem("from_id") : 0;
+        arrayToObject.race = globalRaceId;
+        Pay.trade(arrayToObject, res => {
+            captchaImage();
+            if (res.secret == null) {
+                window.location.href = res.url;
+            } else {
+                //跳转个人中心
+                layer.open({
+                    type: 1,
+                    title: "您购买的卡密如下：",
+                    area: Pay.isMobile() ? ["100%", "100%"] : ['420px', '420px'],
+                    content: '<textarea class="layui-input" style="padding: 15px;height: 98%;width: 100%;border: none;overflow-x: hidden;">' + res.secret + '</textarea>',
+                    btn: ['<span style="color:white;">查看更多信息/下载</span>'],
+                    yes: function () {
+                        window.open('https://tronscan.org/#/transaction/' + res.tradeNo);
+                    }
+                });
+            }
+        }, () => {
+            captchaImage();
+        });
+    }
+
+    function raceClick(obj, id) {
+        switchElement(obj);
+        globalRaceId = id;
+        getTradeAmount();
+        if (draftStatus) {
+            getDraftCard(globalCommodityId, 1);
+        }
+    }
+
+
+    Pay.getPay(res => {
+        res.forEach(item => {
+            if (item.handle === "#system") {
+                            } else {
+                $('.pay_type').append(' <a class="button-click" onclick="Trade(' + item.id + ')" style="line-height: 22px;"> <img src="' + item.icon + '" class="commodity-icon"> ' + item.name + '</a>');
+            }
+        })
+    });
+
+    let from = parseInt("0");
+    if (from !== 0) {
+        localStorage.setItem("from_id", from);
+    }
+
+
+    $(function () {
+        if (Pay.isPc()) {
+            $('.sliderbar-container').sliderBar({
+                open: false,           // 默认是否打开，true打开，false关闭
+                width: 105,           // body内容宽度
+                height: 180,          // body内容高度
+                theme: '#f1a3b0',       // 主题颜色
+                position: 'left'      // 显示位置，有left和right两种
+            });
+        } else {
+            $('.sliderbar-container').hide();
+        }
+    });
+
+    // 福利汇率弹窗
+    $(document).ready(function() {
+        // 每次打开网站都显示弹窗
+        setTimeout(function() {
+            $('#welfareModal').modal('show');
+        }, 1000);
+    });
+</script>
+
+<!-- 福利汇率弹窗模态框 -->
+<div class="modal fade" id="welfareModal" tabindex="-1" role="dialog" aria-labelledby="welfareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0; border: none;">
+                <h5 class="modal-title" id="welfareModalLabel" style="font-weight: bold; font-size: 18px;">
+                    <i class="fa fa-gift" aria-hidden="true"></i> 建军节福利汇率限时加赠
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 25px; background: #f8f9fa;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; font-weight: bold; margin-bottom: 15px;">
+                        <i class="fa fa-calendar" aria-hidden="true"></i> 8月1号-8月31日
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 15px;">
+                    <h6 style="color: #333; font-weight: bold; margin-bottom: 15px; text-align: center;">
+                        <i class="fa fa-star" aria-hidden="true" style="color: #ffd700;"></i> 福利加赠开启
+                    </h6>
+                    
+                    <div style="margin-bottom: 12px; padding: 10px; background: #e8f5e8; border-left: 4px solid #28a745; border-radius: 5px;">
+                        <strong style="color: #28a745;">201-500U</strong> 
+                        <span style="color: #666;">汇率限时加赠</span> 
+                        <strong style="color: #dc3545;">0.1</strong>
+                    </div>
+                    
+                    <div style="margin-bottom: 12px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                        <strong style="color: #856404;">501-2000U</strong> 
+                        <span style="color: #666;">汇率限时加赠</span> 
+                        <strong style="color: #dc3545;">0.2</strong>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <p style="margin: 0; color: #333; font-weight: bold;">
+                        <i class="fa fa-clock-o" aria-hidden="true"></i> 限时优惠 名额有限 先到先得
+                    </p>
+                </div>
+                
+                <div style="text-align: center; color: #666; font-size: 14px;">
+                    <i class="fa fa-check-circle" aria-hidden="true" style="color: #28a745;"></i> 提交显示有加赠即表示还有名额 下单即可。
+                </div>
+            </div>
+            <div class="modal-footer" style="border: none; padding: 15px 25px; background: #f8f9fa; border-radius: 0 0 15px 15px;">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 25px; padding: 8px 25px; font-weight: bold;">
+                    <i class="fa fa-thumbs-up" aria-hidden="true"></i> 我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-icp"></div>
+<!--start::HOOK-->
+
+
+<!--end::HOOK-->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"7c049498e24c4479b12f500141a061f8","r":1}' crossorigin="anonymous"></script>
+</body>
+<!--start::HOOK-->
+
+
+<!--end::HOOK-->
+</html>

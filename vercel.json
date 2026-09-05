@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "/user/api/index/data",
+      "dest": "/api/index_data.json"
+    },
+    {
+      "src": "/user/api/site/info",
+      "dest": "/api/site_info.json"
+    },
+    {
+      "src": "/user/api/index/pay",
+      "dest": "/api/index_pay.json"
+    },
+    {
+      "src": "/user/api/index/commodity",
+      "dest": "/api/index_commodity.json"
+    },
+    {
+      "src": "/user/api/index/commodityDetail",
+      "dest": "/api/commodity_detail.json"
+    },
+    {
+      "src": "/pay_demo",
+      "dest": "/pay_demo.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}
