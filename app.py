@@ -32,7 +32,6 @@ from gateway import build_gateway
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 DB_PATH = DATA_DIR / "dylikes.db"
-DATA_DIR.mkdir(exist_ok=True)
 
 DEMO_MODE = os.environ.get("DEMO_MODE", "1") == "1"
 USDT_RATE = float(os.environ.get("USDT_RATE") or "7.25")          # 1 USDT ≈ N 人民币
@@ -43,6 +42,21 @@ ORDER_EXPIRE = int(os.environ.get("ORDER_EXPIRE_SECONDS") or "1800")
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("app")
+
+# Vercel serverless: /var/task(ROOT) 只读, 无法在项目目录建 data/。
+# 检测到只读则数据库改用内存(:memory:), 冷启动重建(订单不持久, 教学演示可接受)。
+# 生产持久化请接 Vercel KV / Postgres。
+_MEMORY_DB = False
+if not os.environ.get("DYLIKES_PERSIST"):
+    try:
+        DATA_DIR.mkdir(exist_ok=True)
+        _probe = DATA_DIR / ".write_test"
+        _probe.write_text("ok")
+        _probe.unlink()
+    except OSError:
+        _MEMORY_DB = True
+        DB_PATH = ":memory:"
+        log.warning("ROOT 只读: 已切换内存数据库(订单不持久, 重启清空)")
 
 app = Flask(__name__, static_folder=None)
 
@@ -64,10 +78,29 @@ def now() -> str:
 # --------------------------------------------------------------------------- #
 # 数据库
 # --------------------------------------------------------------------------- #
+_mem_conn = None
+
+_mem_conn = None
+
 def get_db():
+    global _mem_conn
+    if DB_PATH == ":memory:":
+        if _mem_conn is None:
+            _mem_conn = sqlite3.connect(":memory:", check_same_thread=False)
+            _mem_conn.row_factory = sqlite3.Row
+        return _mem_conn
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def safe_close(conn):
+    """内存单例连接不真关(否则后续请求用已关连接); 文件库正常关闭。"""
+    if DB_PATH != ":memory:" and conn is not None:
+        try:
+            safe_close(conn)
+        except Exception:
+            pass
 
 
 SCHEMA = """
@@ -109,7 +142,7 @@ def seed():
             log.info("迁移: orders 补列 %s", col)
     conn.commit()
     if cur.execute("SELECT COUNT(*) c FROM commodity").fetchone()["c"] > 0:
-        conn.close()
+        safe_close(conn)
         return
 
     categories = [
@@ -142,7 +175,7 @@ def seed():
              1 if r[5] == 0 else 0, UNIT_NAMES.get(r[0], "个")))
 
     conn.commit()
-    conn.close()
+    safe_close(conn)
     log.info("数据库初始化完成(首次启动, 已写入种子数据)")
 
 
@@ -166,7 +199,7 @@ def commodity_dict(row, with_card_count=False):
         d["card_count"] = conn.execute(
             "SELECT COUNT(*) c FROM commodity_card WHERE commodity_id=? AND used=0",
             (d["id"],)).fetchone()["c"]
-        conn.close()
+        safe_close(conn)
     return d
 
 
@@ -175,7 +208,7 @@ def card_left(cid):
     c = conn.execute(
         "SELECT COUNT(*) c FROM commodity_card WHERE commodity_id=? AND used=0",
         (cid,)).fetchone()["c"]
-    conn.close()
+    safe_close(conn)
     return c
 
 
@@ -324,7 +357,7 @@ def api_index_data():
     rows = conn.execute(
         """SELECT c.*, (SELECT COUNT(*) FROM commodity m WHERE m.category_id=c.id AND m.status=1) commodity_count
            FROM category c WHERE c.status=1 AND c.hide=0 ORDER BY c.sort""").fetchall()
-    conn.close()
+    safe_close(conn)
     return ok([dict(r) for r in rows])
 
 
@@ -339,7 +372,7 @@ def api_commodity():
         args.append(cat)
     sql += " ORDER BY recommend DESC, id"
     rows = conn.execute(sql, args).fetchall()
-    conn.close()
+    safe_close(conn)
     out = []
     for r in rows:
         d = dict(r)
@@ -358,7 +391,7 @@ def api_commodity_detail():
         return err("参数错误: commodityId")
     conn = get_db()
     row = conn.execute("SELECT * FROM commodity WHERE id=?", (cid,)).fetchone()
-    conn.close()
+    safe_close(conn)
     if row is None:
         return err("商品不存在")
     d = commodity_dict(row, with_card_count=True)
@@ -402,7 +435,7 @@ def api_latest_orders():
                   epusdt_trade_id, epusdt_address, epusdt_actual
            FROM orders WHERE status IN ('paid','fulfilled')
            ORDER BY created_at DESC LIMIT 12""").fetchall()
-    conn.close()
+    safe_close(conn)
     out = []
     for r in rows:
         d = dict(r)
@@ -421,7 +454,7 @@ def api_trade_amount():
     num = float(body.get("num") or 0)
     conn = get_db()
     row = conn.execute("SELECT * FROM commodity WHERE id=? AND status=1", (cid,)).fetchone()
-    conn.close()
+    safe_close(conn)
     if row is None:
         return err("商品不存在或已下架")
     c = dict(row)
@@ -463,24 +496,24 @@ def api_order_trade():
     conn = get_db()
     row = conn.execute("SELECT * FROM commodity WHERE id=? AND status=1", (cid,)).fetchone()
     if row is None:
-        conn.close()
+        safe_close(conn)
         return err("商品不存在或已下架")
     c = dict(row)
     if num < c["minimum"]:
-        conn.close()
+        safe_close(conn)
         return err("购买数量不能低于 %s" % c["minimum"])
     if (num - c["minimum"]) % c["step"] != 0:
-        conn.close()
+        safe_close(conn)
         return err("购买数量需为 %s 的倍数" % c["step"])
     if c["password_status"] == 1:
         if len(password) < 6:
-            conn.close()
+            safe_close(conn)
             return err("请设置6位以上查询密码(找回卡密用)")
     elif c["delivery_way"] == 1 and not contact:
-        conn.close()
+        safe_close(conn)
         return err("请填写%s" % ("回填链接/账号" if "链接" in c["name"] else "收货信息"))
     if c["delivery_way"] == 0 and card_left(cid) < num:
-        conn.close()
+        safe_close(conn)
         return err("卡密库存不足, 暂时无法下单")
 
     ratio, _ = bonus_ratio(num)
@@ -516,7 +549,7 @@ def api_order_trade():
          gw.get("trade_id") or "", gw.get("address") or "", gw.get("actual_amount") or "",
          now(), expire_at))
     conn.commit()
-    conn.close()
+    safe_close(conn)
     log.info("新订单 %s | %s x%s(赠至%s) | ¥%.2f ≈ %.2f USDT", order_no, c["name"], num, deliver_num, cny, usdt)
     # 响应结构对齐原站: url=收银台跳转, secret=null 表示走收银台
     return ok({
@@ -535,11 +568,11 @@ def api_order_status():
     conn = get_db()
     row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
     if row is None:
-        conn.close()
+        safe_close(conn)
         return err("订单不存在")
     st = expire_order_if_needed(conn, row)
     row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    conn.close()
+    safe_close(conn)
     d = dict(row)
     d["status"] = st
     return ok({
@@ -576,10 +609,10 @@ def api_query():
     conn = get_db()
     row = conn.execute("SELECT * FROM orders WHERE order_no=?", (keywords,)).fetchone()
     if row is None:
-        conn.close()
+        safe_close(conn)
         return err("未查询到该订单, 请核对订单号")
     st = expire_order_if_needed(conn, row)
-    conn.close()
+    safe_close(conn)
     d = dict(row)
     return ok({
         "order_no": d["order_no"],
@@ -606,19 +639,19 @@ def api_secret():
     conn = get_db()
     row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
     if row is None:
-        conn.close()
+        safe_close(conn)
         return err("订单不存在")
     d = dict(row)
     if d["status"] != "fulfilled":
-        conn.close()
+        safe_close(conn)
         return err("订单未完成, 无法查看卡密")
     if not d["secret"]:
-        conn.close()
+        safe_close(conn)
         return err("该订单无卡密(直充订单请查看任务状态)")
     if d["query_password"] and d["query_password"] != password:
-        conn.close()
+        safe_close(conn)
         return err("查询密码错误")
-    conn.close()
+    safe_close(conn)
     return ok({"secret": d["secret"]})
 
 
@@ -653,14 +686,14 @@ def epusdt_notify():
     conn = get_db()
     row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
     if row is None:
-        conn.close()
+        safe_close(conn)
         return "ok"  # 未知订单: 确认以防重试风暴, 不落任何副作用
     st = expire_order_if_needed(conn, row)
     if st == "pending":
         filled, note = fulfill_order(conn, order_no)
         log.info("Epusdt 到账发货 %s -> %s | %s",
                  order_no, filled["status"] if filled else "-", note)
-    conn.close()
+    safe_close(conn)
     return "ok"
 
 
@@ -674,17 +707,17 @@ def dev_demo_pay():
     conn = get_db()
     row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
     if row is None:
-        conn.close()
+        safe_close(conn)
         return err("订单不存在")
     st = expire_order_if_needed(conn, row)
     if st == "expired":
-        conn.close()
+        safe_close(conn)
         return err("订单已超过30分钟有效期, 已自动关闭, 请重新下单")
     if st != "pending":
-        conn.close()
+        safe_close(conn)
         return err("订单当前状态不可重复入账: " + st)
     filled, note = fulfill_order(conn, order_no)
-    conn.close()
+    safe_close(conn)
     if filled is None:
         return err(note)
     log.info("仿真到账完成 %s -> %s | %s", order_no, filled["status"], note)
