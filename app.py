@@ -44,19 +44,23 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger("app")
 
 # Vercel serverless: /var/task(ROOT) 只读, 无法在项目目录建 data/。
-# 检测到只读则数据库改用内存(:memory:), 冷启动重建(订单不持久, 教学演示可接受)。
-# 生产持久化请接 Vercel KV / Postgres。
-_MEMORY_DB = False
-if not os.environ.get("DYLIKES_PERSIST"):
-    try:
-        DATA_DIR.mkdir(exist_ok=True)
-        _probe = DATA_DIR / ".write_test"
-        _probe.write_text("ok")
-        _probe.unlink()
-    except OSError:
-        _MEMORY_DB = True
-        DB_PATH = ":memory:"
-        log.warning("ROOT 只读: 已切换内存数据库(订单不持久, 重启清空)")
+# 检测到只读则把数据库放到 /tmp(serverless 实例内可写, 订单在实例生命周期内保留,
+# 实例回收/冷启动后重建种子 —— 教学演示足够; 需要跨实例持久化再接 Vercel KV/Postgres)。
+try:
+    DATA_DIR.mkdir(exist_ok=True)
+    _probe = DATA_DIR / ".write_test"
+    _probe.write_text("ok")
+    _probe.unlink()
+    _ROOT_READONLY = False
+except OSError:
+    _ROOT_READONLY = True
+
+if _ROOT_READONLY:
+    import tempfile
+    DATA_DIR = Path(tempfile.gettempdir()) / "dylikes_data"
+    DB_PATH = DATA_DIR / "dylikes.db"
+    DATA_DIR.mkdir(exist_ok=True)
+    log.warning("ROOT 只读: 数据库切换到 /tmp 可写区(实例生命周期内持久, 冷启动重建)")
 
 app = Flask(__name__, static_folder=None)
 
@@ -98,7 +102,7 @@ def safe_close(conn):
     """内存单例连接不真关(否则后续请求用已关连接); 文件库正常关闭。"""
     if DB_PATH != ":memory:" and conn is not None:
         try:
-            safe_close(conn)
+            conn.close()
         except Exception:
             pass
 
@@ -159,7 +163,7 @@ def seed():
 
     # ---- 商品种子: 单一业务「USDT兑换真人粉丝」, 数量即支付USDT ----
     rows = [
-        (1, 1, "USDT兑换·真人高质量粉丝", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
+        (1, 1, "USDT兑换·真人高质量粉丝", "/assets/img/cover_fans.svg", 7.25, 1, 30, 1,
          "{}", w_fans, 6244, 1,
          "<h5>👤 USDT兑换真人高质量粉丝</h5><p>按兑换汇率以 U 换粉：1 USDT = 1.1 粉起，下单量越大汇率越高(限时最高 1:1.65)。真实活跃账号关注，带头像带作品，不掉粉质保15天。</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看粉丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000粉以内24小时到账。</p>"),
     ]
