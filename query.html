@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="/favicon.ico" rel="icon">
+    <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/static/css/i.css?v=1.0">
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <script src="/assets/static/clipboard.js"></script>
+    <title>查单 - 极赞自助下单</title>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/">
+            <img src="/favicon.ico" alt="">
+            <b>极赞自助下单</b>
+        </a>
+        <nav class="topnav">
+            <a href="/"><i class="fa fa-home" aria-hidden="true"></i> 返回首页</a>
+        </nav>
+    </div>
+</div>
+
+<div class="cash-wrap">
+    <div class="card">
+        <div class="card-hd"><i class="fa fa-search hd-ico" aria-hidden="true"></i> 订单查询</div>
+        <div class="card-bd">
+            <p style="color:#8a8f99;font-size:13px;margin-top:0;">输入下单后的<b>订单号</b>查询处理状态; 卡密类订单需输入下单时设置的<b>查询密码</b>方可查看卡密。</p>
+            <div class="form-line">
+                <label>订单号：</label>
+                <input class="finput full" id="orderNoInput" placeholder="如 202609071030150123">
+            </div>
+            <div class="form-line" id="pwdLine">
+                <label>查询密码：</label>
+                <input class="finput full" type="password" id="pwdInput" placeholder="卡密类订单填写下单时设置的查询密码">
+            </div>
+            <button class="btn-submit" id="queryBtn"><i class="fa fa-search" aria-hidden="true"></i> 查询订单</button>
+        </div>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none;">
+        <div class="card-hd"><i class="fa fa-file-text-o hd-ico" aria-hidden="true"></i> 查询结果</div>
+        <div class="card-bd" id="resultBody"></div>
+    </div>
+</div>
+
+<script>
+    function fmtMoney(v) {
+        v = parseFloat(v);
+        if (isNaN(v)) return '-';
+        return v.toFixed(2).replace(/\.?0+$/, '');
+    }
+    function statusHtml(st) {
+        let map = {
+            pending: '<span style="color:#f7a600;font-weight:700;">⏳ 等待付款</span>',
+            paid: '<span style="color:#0d8a4f;font-weight:700;">✅ 已到账, 发货中</span>',
+            fulfilled: '<span style="color:#0d8a4f;font-weight:700;">✅ 已完成</span>',
+            expired: '<span style="color:#d93026;font-weight:700;">⛔ 已超时关闭</span>'
+        };
+        return map[st] || st;
+    }
+
+    $('#queryBtn').click(function () {
+        let orderNo = ($('#orderNoInput').val() || '').trim();
+        if (!orderNo) { layer.msg('请输入订单号'); return; }
+        let idx = layer.load(2, { shade: ['0.3', '#fff'] });
+        $.post('/user/api/index/query', { keywords: orderNo }, res => {
+            layer.close(idx);
+            if (res.code != 200) {
+                $('#resultCard').show();
+                $('#resultBody').html('<div style="text-align:center;padding:10px;color:#d93026;"><i class="fa fa-frown-o" aria-hidden="true"></i> ' + res.msg + '</div>');
+                return;
+            }
+            let d = res.data;
+            let pwdReq = d.query_password_required;
+            $('#pwdLine').show(); // 固定展示, 不要求则不校验
+            let html =
+                '<div class="kv"><span class="k">订单号</span><span class="v">' + d.order_no + '</span></div>' +
+                '<div class="kv"><span class="k">商品</span><span class="v">' + d.commodity_name + ' x' + d.num + '</span></div>' +
+                '<div class="kv"><span class="k">支付金额</span><span class="v">' + fmtMoney(d.amount) + ' USDT (≈¥' + fmtMoney(d.cny) + ')</span></div>' +
+                '<div class="kv"><span class="k">下单时间</span><span class="v">' + (d.created_at || '-') + '</span></div>' +
+                '<div class="kv"><span class="k">状态</span><span class="v">' + statusHtml(d.status) + '</span></div>' +
+                (d.note ? '<div class="kv"><span class="k">处理说明</span><span class="v">' + d.note + '</span></div>' : '');
+            if (d.secret_available) {
+                html += '<div style="margin-top:12px;text-align:center;">' +
+                        '<button class="btn-submit" id="getSecretBtn" style="display:inline-block;width:auto;padding:10px 36px;">' +
+                        '<i class="fa fa-key" aria-hidden="true"></i> 查看卡密</button></div>';
+            }
+            $('#resultCard').show();
+            $('#resultBody').html(html);
+            if (d.secret_available) {
+                $('#getSecretBtn').click(function () {
+                    let pwd = pwdReq ? ($('#pwdInput').val() || '') : '';
+                    if (pwdReq && pwd.length < 6) { layer.msg('请输入下单时设置的查询密码'); return; }
+                    let i2 = layer.load(2, { shade: ['0.3', '#fff'] });
+                    $.post('/user/api/index/secret', { orderId: d.order_no, password: pwd }, r => {
+                        layer.close(i2);
+                        if (r.code != 200) { layer.msg(r.msg); return; }
+                        layer.open({
+                            type: 1, title: '您的卡密如下：',
+                            area: $(window).width() < 640 ? ['100%', '100%'] : ['420px', '420px'],
+                            content: '<textarea class="secret-area" style="width:92%;height:70%;margin:15px;">' + r.data.secret + '</textarea>' +
+                                     '<div style="text-align:center;padding-bottom:15px;"><button class="copy-btn" id="qc" style="padding:8px 26px;">复制</button></div>',
+                            success: function () { new ClipboardJS('#qc'); $('#qc').click(function () { $(this).text('已复制').addClass('ok'); }); }
+                        });
+                    });
+                });
+            }
+        }).fail(function () { layer.close(idx); layer.msg('网络错误'); });
+    });
+
+    $('#orderNoInput').on('keydown', function (e) { if (e.key == 'Enter') $('#queryBtn').click(); });
+</script>
+</body>
+</html>

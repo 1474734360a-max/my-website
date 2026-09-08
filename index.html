@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="/favicon.ico" rel="icon">
+    <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/static/css/i.css?v=1.0">
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <script src="/assets/static/pay.js?v=1.0"></script>
+    <script src="/assets/static/clipboard.js"></script>
+    <title>极赞涨粉 - 抖音真人粉丝24小时自助下单平台</title>
+</head>
+<body>
+<div id="app">
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/">
+                <img src="/favicon.ico" alt="">
+                <b id="shopName">极赞涨粉</b>
+            </a>
+            <nav class="topnav">
+                <a href="/query.html"><i class="fa fa-search" aria-hidden="true"></i> 查单</a>
+                <a class="nav-hot" id="serviceLink" href="#" target="_blank" rel="noopener">
+                    <i class="fa fa-headphones" aria-hidden="true"></i> 在线客服
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="wrap">
+
+        <!-- 公告 -->
+        <div class="card">
+            <div class="card-hd"><i class="fa fa-bullhorn hd-ico" aria-hidden="true"></i> 公告
+                <span class="hd-more">平台公告实时同步</span></div>
+            <div class="card-bd notice-content" id="noticeBox">加载中...</div>
+        </div>
+
+        <!-- 自助下单 (单一业务) -->
+        <div class="card" id="orderCard">
+            <div class="card-hd"><i class="fa fa-file-text-o hd-ico" aria-hidden="true"></i> 自助下单
+                <span class="hd-more">U 兑真人粉丝 · 全自动处理</span></div>
+            <div class="card-bd">
+                <form class="commodity">
+                    <div id="dCoverBox"></div>
+                    <div class="detail-grid">
+                        <div>
+                            <p class="dname" id="dName"></p>
+                            <div class="dtag" id="dTag"></div>
+                            <div class="desc-box" id="dDesc"></div>
+                        </div>
+                    </div>
+
+                    <hr style="border-top:1px dashed #eee;margin:14px 0;">
+
+                    <!-- 动态 widget 字段 -->
+                    <div id="widgetBox"></div>
+
+                    <!-- 收货/回填 -->
+                    <div class="form-line" id="contactLine">
+                        <label id="contactLabel">抖音号/主页：</label>
+                        <input class="finput full" name="contact" id="contactInput" placeholder="粘贴您的抖音号或主页链接, 例如 https://v.douyin.com/xxxx/">
+                    </div>
+
+                    <!-- 查询密码(卡密类) -->
+                    <div class="form-line" id="passwordLine" style="display:none;">
+                        <label>查询密码：</label>
+                        <input class="finput" type="password" name="password" id="passwordInput" placeholder="6位以上, 用于查单时找回卡密">
+                    </div>
+
+                    <!-- 数量 -->
+                    <div class="form-line">
+                        <label>购买数量：</label>
+                        <div class="qty-wrap">
+                            <button type="button" class="qty-btn" id="qtyMinus">−</button>
+                            <input class="qty-input" name="num" id="numInput" type="number" value="0" min="1">
+                            <button type="button" class="qty-btn" id="qtyPlus">+</button>
+                        </div>
+                        <span class="unit-suffix"><span id="unitName">个</span>&nbsp;·&nbsp;最低 <span id="minNum">-</span> 起</span>
+                        <span class="stock-badge stock-full" id="stockView" style="display:none;"></span>
+                    </div>
+
+                    <!-- 兑换比例档位(输入数量后自动命中) -->
+                    <div class="form-line" id="wsLine">
+                        <label>兑换比例：</label>
+                        <div class="ws-tiers" id="wsTiers"></div>
+                    </div>
+
+                    <!-- 金额 -->
+                    <div class="bill-box">
+                        <div class="bill-row"><span>兑换汇率</span><span class="v" id="billRatio">-</span></div>
+                        <div class="bill-row"><span>计算公式</span><span class="v" id="billFormula">-</span></div>
+                        <div class="bill-row"><span>应到粉丝</span><span class="v text-brand" id="billDeliver">-</span></div>
+                        <div class="bill-row bill-total"><span>支付金额 (USDT-TRC20)</span>
+                            <span class="v"><span class="usdt-num" id="billUsdt">-</span>
+                            <small style="color:#8a8f99;">≈ 汇率 1U=<span id="billRate">-</span>元</small></span>
+                        </div>
+                    </div>
+
+                    <!-- 付款方式 -->
+                    <p style="font-size:13px;color:#555;margin:4px 0 8px;">选择付款方式</p>
+                    <div class="pay-row" id="payRow">加载中...</div>
+
+                    <button type="button" class="btn-submit" id="tradeBtn"><i class="fa fa-credit-card" aria-hidden="true"></i> 立即支付</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- USDT下发记录 (接入 Epusdt 网关) -->
+        <div class="card">
+            <div class="card-hd"><i class="fa fa-bolt hd-ico" aria-hidden="true"></i> USDT下发记录
+                <span class="hd-more">Epusdt 网关 · 每20秒刷新</span></div>
+            <div class="card-bd" style="padding:0;">
+                <table class="table table-hover deal-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:120px;">承兑时间</th>
+                            <th style="min-width:200px;">承兑地址</th>
+                            <th style="text-align:right;min-width:100px;">承兑金额</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dealBox">
+                        <tr><td colspan="3" style="text-align:center;color:#8a8f99;padding:14px;">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="card">
+            <div class="card-hd"><i class="fa fa-question-circle hd-ico" aria-hidden="true"></i> 常见问题</div>
+            <div class="card-bd" id="faqBox">加载中...</div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p id="footerService">© 极赞涨粉 · 7x24小时全自动到账 | 仅支持 USDT-TRC20 网络付款</p>
+        <p>虚拟商品一经售出概不退款 · 请在下单前仔细核对链接与数量</p>
+    </div>
+</div>
+
+<script>
+    const setting_cache = 0;
+    const setting_cache_expire = 60;
+    const TRADE_BTN_HTML = '<i class="fa fa-credit-card" aria-hidden="true"></i> 立即支付';
+
+    let globalCommodityId = 0;
+    let globalCommodity = null;   // 当前业务
+    let usdtRate = 7.25;
+    let ratioTiers = [];          // 兑换比例档位(site/info.ratio_tiers)
+
+    // ---------------- 站点信息 ----------------
+    Pay.getWebSiteInfo(info => {
+        usdtRate = parseFloat(info.rate) || usdtRate;
+        if (info.ratio_tiers) {
+            ratioTiers = info.ratio_tiers;
+            if (globalCommodity) renderRatioTiers();   // 详情先返回时补渲染
+        }
+        $('#shopName').text(info.shop_name);
+        if (info.service_url) {
+            $('#serviceLink').attr('href', info.service_url);
+            $('#serviceLink').html('<i class="fa fa-headphones" aria-hidden="true"></i> ' + (info.service_name || '在线客服'));
+        }
+        if (info.notice) $('#noticeBox').html(info.notice);
+        if (info.faq && info.faq.length) {
+            let html = '';
+            info.faq.forEach(f => {
+                html += '<div class="faq-item"><div class="faq-q">' + f.q + '</div><div class="faq-a">' + f.a + '</div></div>';
+            });
+            $('#faqBox').html(html);
+        }
+        document.title = info.title || document.title;
+    });
+
+    // ---------------- 单一业务: 直接加载唯一直充商品 ----------------
+    Pay.getCommodityAll('', list => {
+        if (!list.length) { $('#dName').text('暂无可用业务'); return; }
+        openCommodity(list[0].id);
+    });
+
+    function renderRatioTiers() {
+        if (ratioTiers.length) {
+            $('#wsLine').show();
+            let h = '';
+            ratioTiers.forEach((t, i) => {
+                let range = t.max == null ? (t.min + 'U以上') : (t.min + '-' + t.max + 'U');
+                h += '<span class="ws-tier" data-tier="' + i + '">' + range + ' · 1U=' + t.ratio + '粉' +
+                     (t.limited ? '<em>限时</em>' : '') + '</span>';
+            });
+            $('#wsTiers').html(h);
+            // 重建后按当前数量重新高亮
+            highlightTier(parseInt($('#numInput').val()) || (globalCommodity ? globalCommodity.minimum : 0));
+        } else {
+            $('#wsLine').hide();
+        }
+    }
+
+    function highlightTier(num) {
+        if (!num || !ratioTiers.length) return;
+        let hit = 0;
+        for (let i = 0; i < ratioTiers.length; i++) {
+            let t = ratioTiers[i];
+            if (t.max == null || num <= t.max) { hit = i; break; }
+        }
+        $('.ws-tier').removeClass('cur');
+        $('.ws-tier[data-tier="' + hit + '"]').addClass('cur');
+    }
+
+    function openCommodity(commodityId) {
+        globalCommodityId = commodityId;
+        Pay.getCommodityDetail(commodityId, c => {
+            globalCommodity = c;
+            $('#dName').text(c.name);
+            let cover = c.cover || '/favicon.ico';
+            let isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(cover);
+            if (isVideo) {
+                $('#dCoverBox').html('<video class="detail-cover" src="' + cover +
+                    '" autoplay muted loop playsinline controls preload="metadata"></video>');
+            } else {
+                $('#dCoverBox').html('<img class="detail-cover" id="dCoverImg" src="' + cover + '" alt="">');
+                $('#dCoverImg').click(function () {
+                    layer.open({ type: 1, title: false, closeBtn: 0, anim: 5, area: ['90%', '90%'],
+                                 shadeClose: true, content: '<img src="' + cover + '" style="max-width:100%;max-height:100%;">' });
+                });
+            }
+            $('#dDesc').html(c.description || '');
+            $('#dDesc').find('img').click(function () {
+                layer.open({ type: 1, title: false, closeBtn: 0, anim: 5, area: ['90%', '90%'],
+                             shadeClose: true, content: '<img src="' + $(this).attr('src') + '" style="max-width:100%;max-height:100%;">' });
+            });
+            $('#dDesc').find('video').prop('controls', true);
+            // 标签
+            let tags = '';
+            if (c.delivery_way == 0) {
+                tags += '<span class="tag-card"><i class="fa fa-key" aria-hidden="true"></i> 自动发货</span>';
+            } else {
+                tags += '<span class="tag-auto"><i class="fa fa-bolt" aria-hidden="true"></i> 下单后自动处理</span>';
+            }
+            if (c.password_status == 1) tags += '<span class="tag-real"><i class="fa fa-lock" aria-hidden="true"></i> 需设置查询密码</span>';
+            $('#dTag').html(tags);
+
+            // 动态 widget 字段(对齐原站 JSON 结构)
+            let wHtml = '';
+            if (c.widget) {
+                let widgets;
+                try { widgets = JSON.parse(c.widget); } catch (e) { widgets = []; }
+                widgets.forEach(w => {
+                    let req = w.required ? ' <span style="color:#fe2c55;">*</span>' : '';
+                    if (w.type == 'text' || w.type == 'password' || w.type == 'number') {
+                        wHtml += '<div class="form-line"><label>' + w.cn + req + '：</label>' +
+                                 '<input class="finput full" type="' + w.type + '" name="' + w.name + '" placeholder="' + (w.placeholder || '') + '"></div>';
+                    } else if (w.type == 'select') {
+                        let opts = '<option value="">' + (w.placeholder || '请选择') + '</option>';
+                        (w.dict || '').split(',').forEach(kv => {
+                            let sp = kv.split('=');
+                            if (sp.length == 2) opts += '<option value="' + sp[1] + '">' + sp[0] + '</option>';
+                        });
+                        wHtml += '<div class="form-line"><label>' + w.cn + req + '：</label><select class="finput" name="' + w.name + '">' + opts + '</select></div>';
+                    } else if (w.type == 'textarea') {
+                        wHtml += '<div class="form-line" style="align-items:flex-start;"><label>' + w.cn + req + '：</label>' +
+                                 '<textarea class="finput" name="' + w.name + '" placeholder="' + (w.placeholder || '') + '"></textarea></div>';
+                    }
+                });
+            }
+            $('#widgetBox').html(wHtml);
+
+            // 收货/密码字段
+            let isCard = c.delivery_way == 0;
+            if (isCard) {
+                $('#contactLine').hide();
+                $('#passwordLine').show();
+            } else {
+                $('#contactLine').show();
+                $('#passwordLine').hide();
+            }
+
+            // 数量
+            $('#unitName').text(c.unit_name || '个');
+            $('#minNum').text(c.minimum);
+            $('#numInput').attr({ min: c.minimum, step: c.step }).val(c.minimum).trigger('change');
+
+            // 库存(卡密类)
+            if (isCard) {
+                let n = c.card_count || 0;
+                let cls = n <= 0 ? 'stock-low' : (n <= 20 ? 'stock-mid' : 'stock-full');
+                let txt = n <= 0 ? '已售罄' : (n <= 5 ? '即将售罄 剩' + n : '剩余库存 ' + n);
+                if (n <= 0) txt = '已售罄';
+                $('#stockView').attr('class', 'stock-badge ' + cls).text(txt).show();
+            } else {
+                $('#stockView').hide();
+            }
+
+            // 兑换比例档位(来自 site/info.ratio_tiers)
+            renderRatioTiers();
+
+            // 付款方式(来自 /user/api/index/pay, 图标随后端配置)
+            Pay.getPay(pays => {
+                let ph = '';
+                pays.forEach(item => {
+                    if (item.handle === "#system") return;   // 无余额体系
+                    ph += '<div class="pay-item" data-pay="' + item.id + '">' +
+                          '<img src="' + item.icon + '" alt="">' +
+                          '<span>' + item.name + '<small>自动收银台 · 30分钟内有效</small></span></div>';
+                });
+                $('#payRow').html(ph || '<span style="color:#8a8f99;">暂无可用支付方式</span>');
+            });
+
+            calcAmount();
+        });
+    }
+
+    // ---------------- 数量步进 ----------------
+    $('#qtyMinus').click(function () {
+        let c = globalCommodity; if (!c) return;
+        let v = parseInt($('#numInput').val()) || c.minimum;
+        v = Math.max(c.minimum, v - c.step);
+        $('#numInput').val(v).trigger('change');
+    });
+    $('#qtyPlus').click(function () {
+        let c = globalCommodity; if (!c) return;
+        let v = parseInt($('#numInput').val()) || c.minimum;
+        $('#numInput').val(v + c.step).trigger('change');
+    });
+    $('#numInput').on('change input', function () { calcAmount(); });
+
+    // ---------------- 算价(服务端为准) ----------------
+    let amountTimer = null;
+    function calcAmount() {
+        let c = globalCommodity;
+        if (!c) return;
+        let num = parseInt($('#numInput').val());
+        if (isNaN(num) || num <= 0) num = c.minimum;
+        if (num < c.minimum) { num = c.minimum; $('#numInput').val(num); }
+        // 本地即时高亮命中档(随后服务端 tradeAmount 返回权威值)
+        highlightTier(num);
+
+        clearTimeout(amountTimer);
+        amountTimer = setTimeout(() => {
+            Pay.getTradeAmount(globalCommodityId, '', 0, num, '', res => {
+                $('#billRatio').html('1 U = ' + res.ratio + ' 粉' + (res.limited ? ' <small style="color:#c24f4a;font-weight:700;">(限时)</small>' : ''));
+                $('#billFormula').text(res.formula);
+                $('#billDeliver').text(res.deliver_num + ' 粉');
+                let vi = ratioTiers.findIndex(t => t.ratio == res.ratio);
+                $('.ws-tier').removeClass('cur');
+                if (vi >= 0) $('.ws-tier[data-tier="' + vi + '"]').addClass('cur');
+                $('#billUsdt').text(fmtMoney(res.amount));
+                $('#billRate').text(res.rate);
+                usdtRate = parseFloat(res.rate) || usdtRate;
+                $('#tradeBtn').prop('disabled', false).html(TRADE_BTN_HTML);
+                if (res.card_count != null && globalCommodity.delivery_way == 0) {
+                    let n = res.card_count;
+                    if (n <= 0) {
+                        $('#stockView').attr('class', 'stock-badge stock-low').text('已售罄').show();
+                        $('#tradeBtn').prop('disabled', true).text('库存不足, 暂时无法下单');
+                    } else {
+                        $('#stockView').attr('class', 'stock-badge stock-full').text('剩余库存 ' + n).show();
+                    }
+                }
+            });
+        }, 260);
+    }
+
+    function fmtMoney(v, dp) {
+        v = parseFloat(v);
+        if (isNaN(v)) return '-';
+        dp = dp || 4;
+        let s = v.toFixed(dp).replace(/0+$/, '').replace(/\.$/, '');
+        return s === '' ? '0' : s;
+    }
+
+    // ---------------- 提交订单 ----------------
+    $('#tradeBtn').click(function () {
+        let c = globalCommodity;
+        if (!c) { layer.msg('请先选择商品'); return; }
+        if ($(this).prop('disabled')) return;
+        let num = parseInt($('#numInput').val());
+        if (isNaN(num) || num < c.minimum) {
+            layer.msg('购买数量不能低于 ' + c.minimum); return;
+        }
+        if ((num - c.minimum) % c.step != 0) {
+            layer.msg('购买数量需为 ' + c.step + ' 的倍数'); return;
+        }
+        let contact = ($('#contactInput').val() || '').trim();
+        if (c.delivery_way == 1 && !contact) {
+            layer.msg('请填写您要涨粉的抖音号或主页链接'); return;
+        }
+        let password = ($('#passwordInput').val() || '');
+        if (c.password_status == 1 && password.length < 6) {
+            layer.msg('请设置6位以上查询密码(用于查单找回卡密)'); return;
+        }
+        let idx = layer.load(2, { shade: ['0.3', '#fff'] });
+        let data = Pay.arrayToObject($('.commodity').serializeArray());
+        data.commodity_id = globalCommodityId;
+        data.pay_id = 3;
+        data.device = Pay.device();
+        data.from = localStorage.hasOwnProperty('from_id') ? localStorage.getItem('from_id') : 0;
+        Pay.trade(data, res => {
+            layer.close(idx);
+            if (res.secret == null) {
+                // 跳转收银台(订单已与后端关联)
+                window.location.href = res.url;
+            } else {
+                layer.open({
+                    type: 1, title: '您的卡密如下：',
+                    area: Pay.isMobile() ? ['100%', '100%'] : ['420px', '420px'],
+                    content: '<textarea class="layui-input" style="padding:15px;height:98%;width:100%;border:none;overflow-x:hidden;">' + res.secret + '</textarea>'
+                });
+            }
+        }, () => { layer.close(idx); });
+    });
+
+    // ---------------- 实时成交 ----------------
+    function loadDeals() {
+        $.get('/user/api/index/latestOrders', res => {
+            if (res.code != 200) return;
+            let rows = res.data || [];
+            if (!rows.length) {
+                $('#dealBox').html('<tr><td colspan="3" style="text-align:center;color:#8a8f99;padding:14px;">暂无下发记录</td></tr>');
+                return;
+            }
+            let html = '';
+            rows.forEach(o => {
+                let t = (o.created_at || '').substring(0, 19).replace(/-/g, '/');
+                // 承兑地址: 真实模式取 epusdt 一次性收款地址, DEMO 用仿真地址
+                let addr = o.epusdt_address || o.address || '';
+                // 承兑金额: 真实模式取 epusdt 实际USDT, DEMO 用应付USDT
+                let amt = o.epusdt_actual || o.usdt_amount || 0;
+                html += '<tr>' +
+                        '<td style="color:#8a8f99;white-space:nowrap;">' + t + '</td>' +
+                        '<td class="deal-addr" title="' + addr + '">' + addr + '</td>' +
+                        '<td style="text-align:right;font-weight:700;color:#fe2c55;white-space:nowrap;">' + fmtMoney(amt) + ' USDT</td>' +
+                        '</tr>';
+            });
+            $('#dealBox').html(html);
+        });
+    }
+    loadDeals();
+    setInterval(loadDeals, 20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="/favicon.ico" rel="icon">
+    <link rel="stylesheet" href="/assets/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/static/font/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/static/css/i.css?v=1.0">
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/pay.js?v=1.0"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <script src="/assets/static/clipboard.js"></script>
+    <title>收银台 - 极赞涨粉</title>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/">
+            <img src="/favicon.ico" alt="">
+            <b>极赞涨粉</b>
+        </a>
+        <nav class="topnav">
+            <a href="/"><i class="fa fa-home" aria-hidden="true"></i> 返回首页</a>
+            <a href="/query.html"><i class="fa fa-search" aria-hidden="true"></i> 查单</a>
+        </nav>
+    </div>
+</div>
+
+<div class="cash-wrap">
+    <div class="card">
+        <div class="card-bd" id="cashBody">
+            <p style="text-align:center;color:#8a8f99;">加载订单中...</p>
+        </div>
+    </div>
+    <p style="text-align:center;color:#b8bcc4;font-size:12px;line-height:1.9;">
+        USDT-TRC20 网络自动收银台<br>本页面有效期为下单后30分钟, 超时订单自动关闭
+    </p>
+</div>
+
+<script>
+    // 演示标记由后端在订单状态接口返回(无竞态, DEMO_MODE=0 时自动消失)
+    let orderNo = '';
+    let pollTimer = null;
+    let countdownTimer = null;
+    let expireTs = 0;
+
+    function getParam(name) {
+        let m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    orderNo = getParam('orderNo');
+
+    function fmtMoney(v) {
+        v = parseFloat(v);
+        if (isNaN(v)) return '-';
+        let s = v.toFixed(2).replace(/\.?0+$/, '');
+        return s === '' ? '0' : s;
+    }
+
+    function statusText(st) {
+        let map = { pending: '等待付款', paid: '已到账, 系统发货中', fulfilled: '已完成', expired: '订单已超时关闭' };
+        return map[st] || st;
+    }
+
+    // ---------------- 轮询订单状态 ----------------
+    function poll() {
+        clearTimeout(pollTimer);
+        $.get('/user/api/order/status', { orderNo: orderNo }, res => {
+            if (res.code != 200) {
+                $('#cashBody').html('<div style="text-align:center;padding:20px;"><p style="font-size:40px;">⚠️</p>' +
+                    '<p>' + res.msg + '</p><a class="btn-submit" style="display:inline-block;width:auto;padding:8px 30px;" href="/">返回首页</a></div>');
+                return;
+            }
+            render(res.data);
+        });
+    }
+
+    function render(od) {
+        if (!od) { if (orderNo) poll(); return; }
+        let st = od.status;
+        expireTs = new Date(od.expire_at.replace(/-/g, '/')).getTime();
+
+        // 已过期 -> 停止轮询
+        if (st == 'expired') {
+            clearTimeout(pollTimer); clearInterval(countdownTimer);
+            $('#cashBody').html(
+                '<div class="success-ico">⏰</div>' +
+                '<h5 style="text-align:center;">订单已超过30分钟有效期</h5>' +
+                '<p style="text-align:center;color:#8a8f99;font-size:13px;">订单号 ' + od.order_no + ' 已自动关闭, 未收到任何款项。</p>' +
+                '<div style="text-align:center;margin-top:14px;"><a class="btn-submit" style="display:inline-block;width:auto;padding:10px 34px;" href="/">重新下单</a></div>');
+            return;
+        }
+
+        // 完成
+        if (st == 'fulfilled') {
+            clearTimeout(pollTimer); clearInterval(countdownTimer);
+            let isCard = od.delivery_way == 0;
+            let inner = '';
+            if (isCard && od.secret) {
+                inner =
+                    '<div class="success-ico">🎉</div>' +
+                    '<h5 style="text-align:center;">支付成功 · 卡密已发放</h5>' +
+                    '<p style="text-align:center;color:#8a8f99;font-size:13px;">请复制并妥善保存卡密, 也可随时到【查单】凭订单号找回</p>' +
+                    '<textarea class="secret-area" id="secretBox" readonly>' + od.secret + '</textarea>' +
+                    '<div style="display:flex;gap:8px;margin-top:10px;">' +
+                    '<button class="copy-btn" style="flex:1;padding:10px;" id="copySecret">复制卡密</button>' +
+                    '<a class="copy-btn" style="flex:1;padding:10px;background:#161823;text-align:center;" href="/query.html">去查单</a></div>';
+            } else {
+                inner =
+                    '<div class="success-ico">🎉</div>' +
+                    '<h5 style="text-align:center;">支付成功 · 任务已提交</h5>' +
+                    '<div style="margin:10px 0 4px;" class="kv"><span class="k">订单号</span><span class="v">' + od.order_no + '</span></div>' +
+                    '<div class="kv"><span class="k">商品</span><span class="v">' + od.commodity_name + ' x' + od.num + '</span></div>' +
+                    '<div class="kv"><span class="k">收货信息</span><span class="v">' + (od.contact || '-') + '</span></div>' +
+                    (od.note ? '<div class="kv"><span class="k">任务状态</span><span class="v" style="color:#0d8a4f;">' + od.note + '</span></div>' : '') +
+                    '<div style="text-align:center;margin-top:12px;"><a class="btn-submit" style="display:inline-block;width:auto;padding:10px 34px;" href="/">返回首页继续下单</a></div>';
+            }
+            $('#cashBody').html(inner);
+            if (isCard && od.secret) {
+                new ClipboardJS('#copySecret');
+                $('#copySecret').click(function () { $(this).text('已复制').addClass('ok'); });
+            }
+            return;
+        }
+
+        // pending / paid: 收银台视图
+        let isCard = od.delivery_way == 0;
+        let view =
+            '<p style="text-align:center;color:#8a8f99;font-size:13px;">订单号 <b style="color:#333;">' + od.order_no + '</b></p>' +
+            '<div class="pay-notice">' +
+                '当前USDT支付区块网络协议为TRC20<br>' +
+                '1.到账金额需要与下方显示的金额一致,否则系統无法确认 !!<br>' +
+                '2.客户自身因为地址错误或金额错误产生的不到账与刷分兑工作室无关<br>' +
+                '3.支付成功后请等待区块链确认,通常1-5分钟内会自动跳转<br>' +
+                '4.付款地址随机轮换,请勿长期保存,转错地址我司不承认任何责任<br>' +
+                '5.任何问题请和灰鸽子工作室唯一客服联系 <a href="https://t.me/huigeziu" target="_blank" rel="noopener">@huigeziu</a><br>' +
+                '尝试点击钱包地址或金额可直接复制' +
+            '</div>' +
+            '<div class="cash-status" style="color:' + (st == 'pending' ? '#f7a600' : '#0d8a4f') + ';">' +
+                '<i class="fa ' + (st == 'pending' ? 'fa-clock-o' : 'fa-check-circle') + '" aria-hidden="true"></i> ' + statusText(st) + '</div>' +
+            '<div class="cash-amt">' +
+                '<div><span class="n pay-copy" id="amtCopy" data-clipboard-text="' + fmtMoney(od.amount) + '" title="点击复制金额">' + fmtMoney(od.amount) + '</span> <span class="u">USDT</span></div>' +
+                '<div class="cny">' + od.commodity_name + ' · 兑换 ' + (od.deliver_num || od.num) + ' 粉</div>' +
+            '</div>' +
+            '<div class="chain-line"><span class="on">● USDT-TRC20</span> 网络收款</div>' +
+            '<div class="qr-box"><img id="qrImg" src="/qr?text=' + encodeURIComponent(od.address || '') + '" alt="收款二维码"></div>' +
+            '<div class="addr-box"><code id="addrCode" class="pay-copy" data-clipboard-text="' + (od.address || '') + '" title="点击复制地址">' + (od.address || '') + '</code>' +
+                '<button class="copy-btn" id="copyAddr">复制地址</button></div>' +
+            '<div class="countdown" style="margin-top:12px;">订单有效期剩余 <b id="cdTime">--:--</b></div>';
+
+        if (st != 'pending') {
+            view += '<div class="sim-box"><p style="font-size:12px;color:#0d8a4f;"><i class="fa fa-spinner fa-spin"></i> 已检测到链上到账, 系统自动发货中, 请稍候...</p></div>';
+        }
+
+        $('#cashBody').html(view);
+        new ClipboardJS('#copyAddr');
+        new ClipboardJS('.pay-copy');
+        $('#copyAddr').click(function () { $(this).text('已复制').addClass('ok'); });
+        $('#amtCopy, #addrCode').click(function () {
+            let t = $(this); t.addClass('copied');
+            setTimeout(function () { t.removeClass('copied'); }, 1200);
+        });
+        startCountdown();
+        pollTimer = setTimeout(poll, 3000);
+    }
+
+    function startCountdown() {
+        clearInterval(countdownTimer);
+        countdownTimer = setInterval(function () {
+            let left = Math.max(0, Math.floor((expireTs - Date.now()) / 1000));
+            if (left <= 0) { clearInterval(countdownTimer); poll(); return; }
+            let mm = String(Math.floor(left / 60)).padStart(2, '0');
+            let ss = String(left % 60).padStart(2, '0');
+            $('#cdTime').text(mm + ':' + ss);
+        }, 1000);
+    }
+
+    $(function () {
+        if (!orderNo) {
+            $('#cashBody').html('<div style="text-align:center;padding:30px;"><p style="font-size:40px;">🤔</p>' +
+                '<p>缺少订单号</p><a class="btn-submit" style="display:inline-block;width:auto;padding:8px 30px;" href="/">返回首页</a></div>');
+            return;
+        }
+        poll();
+    });
+</script>
+</body>
+</html>
