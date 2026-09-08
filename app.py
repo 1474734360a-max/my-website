@@ -183,6 +183,69 @@ def seed():
     log.info("数据库初始化完成(首次启动, 已写入种子数据)")
 
 
+def _demo_addr(seed_i: int) -> str:
+    """按序号确定性生成仿真 TRC20 地址(与 gateway 同款算法, 保证格式合法)。"""
+    import hashlib
+    _B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+    d = hashlib.sha256(("demo-order-addr:" + str(seed_i)).encode()).digest()
+    out = ["T"]
+    while len(out) < 34:
+        for b in d:
+            out.append(_B58[b % len(_B58)])
+            if len(out) >= 34:
+                break
+    return "".join(out)
+
+
+def seed_demo_orders():
+    """撑场面演示数据: 无任何已支付/已完成订单时, 生成一批仿真"已下发"记录。
+    仅当 orders 表里没有 paid/fulfilled 订单时插入(幂等); 真实订单出现后不再补。
+    """
+    conn = get_db()
+    cur = conn.cursor()
+    has_paid = cur.execute(
+        "SELECT COUNT(*) c FROM orders WHERE status IN ('paid','fulfilled')"
+    ).fetchone()["c"]
+    if has_paid > 0:
+        safe_close(conn)
+        return
+    from datetime import timedelta
+    # (小时前, USDT数, 是否命中高汇率档)
+    samples = [
+        (0.2, 88), (1.5, 320), (3.0, 55), (5.5, 1200), (8.0, 240),
+        (12.0, 66), (18.0, 500), (26.0, 150), (34.0, 2000), (47.0, 300),
+        (60.0, 75), (80.0, 850), (110.0, 180), (140.0, 30), (170.0, 640),
+    ]
+    for i, (hours_ago, usdt) in enumerate(samples):
+        ts = datetime.now() - timedelta(hours=hours_ago)
+        order_no = ts.strftime("%Y%m%d%H%M%S") + "%04d" % (1000 + i)
+        # 汇率档: 与 bonus_ratio 一致
+        if usdt <= 100: ratio = 1.1
+        elif usdt <= 200: ratio = 1.2
+        elif usdt <= 500: ratio = 1.4
+        else: ratio = 1.65
+        deliver = int(usdt * ratio)
+        addr = _demo_addr(i)
+        cur.execute(
+            """INSERT INTO orders(order_no, commodity_id, commodity_name, delivery_way,
+               unit_name, num, unit_price, cny_total, rate, usdt_amount, contact,
+               widget, query_password, handle, address, status, ratio, deliver_num,
+               epusdt_trade_id, epusdt_address, epusdt_actual, created_at, paid_at, expire_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'fulfilled', ?,?,?,?,?,?,?,?)""",
+            (order_no, 1, "USDT兑换·真人高质量粉丝", 1, "U",
+             usdt, round(7.25 / ratio, 4), round(usdt * 7.25, 2), 7.25, float(usdt),
+             "https://v.douyin.com/" + "".join(__import__("random").choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
+             "", "", "simulated", addr, ratio, deliver,
+             "DEMO" + str(100000 + i), addr, str(round(usdt, 2)),
+             ts.strftime("%Y-%m-%d %H:%M:%S"),
+             ts.strftime("%Y-%m-%d %H:%M:%S"),
+             (ts + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    n = cur.execute("SELECT COUNT(*) c FROM orders WHERE status='fulfilled'").fetchone()["c"]
+    safe_close(conn)
+    log.info("演示数据: 已生成 %d 条仿真下发记录", n)
+
+
 # --------------------------------------------------------------------------- #
 # 工具函数
 # --------------------------------------------------------------------------- #
@@ -775,6 +838,7 @@ def static_files(path):
 # Vercel/任何 WSGI 入口以 import 方式加载(不执行 __main__), 必须在加载期建表+种子,
 # 否则首个请求会因缺表报错。seed() 幂等, 可安全重复调用。
 seed()
+seed_demo_orders()
 
 if __name__ == "__main__":
     if DEMO_MODE:
