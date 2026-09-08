@@ -46,9 +46,13 @@ class SimulatedGateway:
 
     def create_order(self, order: dict) -> dict:
         address = _fake_trc20(order["order_no"])
+        try:
+            expire = int(os.environ.get("ORDER_EXPIRE_SECONDS") or 1800)  # 空串兜底
+        except (TypeError, ValueError):
+            expire = 1800
         return {
             "address": address,
-            "expire_seconds": int(os.environ.get("ORDER_EXPIRE_SECONDS", 1800)),
+            "expire_seconds": expire,
             "cashier_url": "/cashier.html?orderNo=" + urllib.parse.quote(order["order_no"]),
         }
 
