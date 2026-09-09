@@ -103,3 +103,5 @@ assets/static/      原站同款前端库(bootstrap4/layer/pay.js 等, pay.js �
 assets/img/         商品封面与图标
 data/dylikes.db     SQLite(首次启动自动生成)
 ```
+
+# KV 持久化(Upstash Redis)已于部署环境启用, 解决 serverless 订单跨实例丢失
