@@ -107,6 +107,162 @@ def safe_close(conn):
             pass
 
 
+
+# --------------------------------------------------------------------------- #
+# 订单持久化层: 线上走 Upstash Redis(KV REST, 零依赖), 本地走 SQLite
+# --------------------------------------------------------------------------- #
+import urllib.request as _ur
+import urllib.parse as _up
+
+class UpstashRedis:
+    """Upstash Redis REST 客户端(纯标准库)。Vercel 连接 KV 后自动注入
+    KV_REST_API_URL / KV_REST_API_TOKEN。"""
+    def __init__(self):
+        self.url = (os.environ.get("KV_REST_API_URL") or "").rstrip("/")
+        self.token = os.environ.get("KV_REST_API_TOKEN") or ""
+        self.enabled = bool(self.url and self.token)
+        if self.enabled:
+            log.info("KV 持久化已启用: %s", self.url)
+
+    def _req(self, method, path, body=None):
+        url = self.url + path
+        data = body.encode("utf-8") if isinstance(body, str) else None
+        req = _ur.Request(url, data=data, method=method)
+        req.add_header("Authorization", "Bearer " + self.token)
+        if data is not None:
+            req.add_header("Content-Type", "text/plain")
+        with _ur.urlopen(req, timeout=6) as resp:
+            raw = resp.read().decode("utf-8")
+        try:
+            return json.loads(raw)
+        except Exception:
+            return {"result": raw}
+
+    def get_json(self, key):
+        try:
+            r = self._req("GET", "/get/" + _up.quote(key, safe=""))
+        except Exception as e:
+            log.warning("KV get 失败 %s: %s", key, e)
+            return None
+        val = r.get("result")
+        if not val:
+            return None
+        if isinstance(val, dict):
+            return val
+        try:
+            return json.loads(val)
+        except Exception:
+            return val
+
+    def set_json(self, key, value, ttl=None):
+        payload = json.dumps(value, ensure_ascii=False)
+        path = "/set/" + _up.quote(key, safe="")
+        if ttl:
+            path += "?EX=" + str(int(ttl))
+        try:
+            self._req("POST", path, body=payload)
+            return True
+        except Exception as e:
+            log.warning("KV set 失败 %s: %s", key, e)
+            return False
+
+    def keys(self, pattern):
+        try:
+            r = self._req("GET", "/keys/" + _up.quote(pattern, safe=""))
+        except Exception as e:
+            log.warning("KV keys 失败: %s", e)
+            return []
+        return r.get("result") or []
+
+
+REDIS = UpstashRedis()
+ORDER_KV_TTL = 7 * 86400   # 订单在 KV 保留 7 天
+
+_ORDER_COLS = [
+    "order_no", "commodity_id", "commodity_name", "delivery_way", "unit_name",
+    "num", "unit_price", "cny_total", "rate", "usdt_amount", "contact", "widget",
+    "query_password", "handle", "address", "status", "secret", "note", "ratio",
+    "deliver_num", "epusdt_trade_id", "epusdt_address", "epusdt_actual",
+    "created_at", "paid_at", "expire_at",
+]
+_ORDER_TEXT = {"order_no", "commodity_name", "unit_name", "contact", "widget",
+               "query_password", "handle", "address", "status", "secret", "note",
+               "epusdt_trade_id", "epusdt_address", "epusdt_actual",
+               "created_at", "paid_at", "expire_at"}
+
+
+def _norm_order(d):
+    out = {}
+    for c in _ORDER_COLS:
+        if c in _ORDER_TEXT:
+            out[c] = d.get(c) or ""
+        else:
+            v = d.get(c)
+            out[c] = v if v is not None else 0
+    return out
+
+
+def load_order(order_no):
+    """KV 优先(线上), SQLite 兜底(本地)。返回完整订单 dict 或 None。"""
+    if REDIS.enabled:
+        d = REDIS.get_json("order:" + order_no)
+        if d is not None:
+            return d
+    conn = get_db()
+    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
+    safe_close(conn)
+    return dict(row) if row else None
+
+
+def save_order(d):
+    """写入订单: 线上写 KV, 本地写 SQLite(upsert)。返回规范化后的 dict。"""
+    d = _norm_order(d)
+    if REDIS.enabled:
+        REDIS.set_json("order:" + d["order_no"], d, ttl=ORDER_KV_TTL)
+        return d
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO orders(order_no, commodity_id, commodity_name, delivery_way,
+           unit_name, num, unit_price, cny_total, rate, usdt_amount, contact, widget,
+           query_password, handle, address, status, secret, note, ratio, deliver_num,
+           epusdt_trade_id, epusdt_address, epusdt_actual, created_at, paid_at, expire_at)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+           ON CONFLICT(order_no) DO UPDATE SET
+             commodity_id=excluded.commodity_id, commodity_name=excluded.commodity_name,
+             delivery_way=excluded.delivery_way, unit_name=excluded.unit_name,
+             num=excluded.num, unit_price=excluded.unit_price, cny_total=excluded.cny_total,
+             rate=excluded.rate, usdt_amount=excluded.usdt_amount, contact=excluded.contact,
+             widget=excluded.widget, query_password=excluded.query_password,
+             handle=excluded.handle, address=excluded.address, status=excluded.status,
+             secret=excluded.secret, note=excluded.note, ratio=excluded.ratio,
+             deliver_num=excluded.deliver_num, epusdt_trade_id=excluded.epusdt_trade_id,
+             epusdt_address=excluded.epusdt_address, epusdt_actual=excluded.epusdt_actual,
+             created_at=excluded.created_at, paid_at=excluded.paid_at,
+             expire_at=excluded.expire_at""",
+        tuple(d[c] for c in _ORDER_COLS))
+    conn.commit()
+    safe_close(conn)
+    return d
+
+
+def list_orders(statuses, limit):
+    """列出指定状态订单, 按创建时间倒序。线上走 KV 扫描, 本地走 SQLite。"""
+    if REDIS.enabled:
+        orders = []
+        for k in REDIS.keys("order:*"):
+            d = REDIS.get_json(k)
+            if isinstance(d, dict) and d.get("status") in statuses:
+                orders.append(d)
+        orders.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+        return orders[:limit]
+    conn = get_db()
+    q = ",".join("?" * len(statuses))
+    rows = conn.execute(
+        "SELECT * FROM orders WHERE status IN (%s) ORDER BY created_at DESC LIMIT ?" % q,
+        tuple(statuses) + (limit,)).fetchall()
+    safe_close(conn)
+    return [dict(r) for r in rows]
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS category(
     id INTEGER PRIMARY KEY, name TEXT, icon TEXT, sort INTEGER DEFAULT 0,
@@ -199,18 +355,10 @@ def _demo_addr(seed_i: int) -> str:
 
 def seed_demo_orders():
     """撑场面演示数据: 无任何已支付/已完成订单时, 生成一批仿真"已下发"记录。
-    仅当 orders 表里没有 paid/fulfilled 订单时插入(幂等); 真实订单出现后不再补。
-    """
-    conn = get_db()
-    cur = conn.cursor()
-    has_paid = cur.execute(
-        "SELECT COUNT(*) c FROM orders WHERE status IN ('paid','fulfilled')"
-    ).fetchone()["c"]
-    if has_paid > 0:
-        safe_close(conn)
+    幂等: 已有 paid/fulfilled 订单则跳过(线上以 KV 为准)。"""
+    if list_orders(("paid", "fulfilled"), 1):
         return
     from datetime import timedelta
-    # (小时前, USDT数, 是否命中高汇率档)
     samples = [
         (0.2, 88), (1.5, 320), (3.0, 55), (5.5, 1200), (8.0, 240),
         (12.0, 66), (18.0, 500), (26.0, 150), (34.0, 2000), (47.0, 300),
@@ -219,31 +367,30 @@ def seed_demo_orders():
     for i, (hours_ago, usdt) in enumerate(samples):
         ts = datetime.now() - timedelta(hours=hours_ago)
         order_no = ts.strftime("%Y%m%d%H%M%S") + "%04d" % (1000 + i)
-        # 汇率档: 与 bonus_ratio 一致
         if usdt <= 100: ratio = 1.1
         elif usdt <= 200: ratio = 1.2
         elif usdt <= 500: ratio = 1.4
         else: ratio = 1.65
         deliver = int(usdt * ratio)
         addr = _demo_addr(i)
-        cur.execute(
-            """INSERT INTO orders(order_no, commodity_id, commodity_name, delivery_way,
-               unit_name, num, unit_price, cny_total, rate, usdt_amount, contact,
-               widget, query_password, handle, address, status, ratio, deliver_num,
-               epusdt_trade_id, epusdt_address, epusdt_actual, created_at, paid_at, expire_at)
-               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'fulfilled', ?,?,?,?,?,?,?,?)""",
-            (order_no, 1, "USDT兑换·真人高质量粉丝", 1, "U",
-             usdt, round(7.25 / ratio, 4), round(usdt * 7.25, 2), 7.25, float(usdt),
-             "https://v.douyin.com/" + "".join(__import__("random").choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
-             "", "", "simulated", addr, ratio, deliver,
-             "DEMO" + str(100000 + i), addr, str(round(usdt, 2)),
-             ts.strftime("%Y-%m-%d %H:%M:%S"),
-             ts.strftime("%Y-%m-%d %H:%M:%S"),
-             (ts + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")))
-    conn.commit()
-    n = cur.execute("SELECT COUNT(*) c FROM orders WHERE status='fulfilled'").fetchone()["c"]
-    safe_close(conn)
-    log.info("演示数据: 已生成 %d 条仿真下发记录", n)
+        save_order({
+            "order_no": order_no, "commodity_id": 1,
+            "commodity_name": "USDT兑换·真人高质量粉丝", "delivery_way": 1,
+            "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
+            "cny_total": round(usdt * 7.25, 2), "rate": 7.25,
+            "usdt_amount": float(usdt),
+            "contact": "https://v.douyin.com/" + "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
+            "widget": "", "query_password": "", "handle": "simulated",
+            "address": addr, "status": "fulfilled", "secret": "",
+            "note": "已下发 " + str(deliver) + " 粉", "ratio": ratio,
+            "deliver_num": deliver,
+            "epusdt_trade_id": "DEMO" + str(100000 + i),
+            "epusdt_address": addr, "epusdt_actual": str(round(usdt, 2)),
+            "created_at": ts.strftime("%Y-%m-%d %H:%M:%S"),
+            "paid_at": ts.strftime("%Y-%m-%d %H:%M:%S"),
+            "expire_at": (ts + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S"),
+        })
+    log.info("演示数据: 已生成 %d 条仿真下发记录", len(samples))
 
 
 # --------------------------------------------------------------------------- #
@@ -310,48 +457,57 @@ def gen_order_no() -> str:
     return datetime.now().strftime("%Y%m%d%H%M%S") + "%04d" % random.randint(0, 9999)
 
 
-def expire_order_if_needed(conn, row):
+def expire_order_if_needed(d):
     """轮询时惰性将超时订单置为过期。返回更新后的状态。"""
-    st = row["status"]
-    if st == "pending" and row["expire_at"] and row["expire_at"] < now():
-        conn.execute("UPDATE orders SET status='expired' WHERE order_no=?", (row["order_no"],))
-        conn.commit()
+    st = d["status"]
+    if st == "pending" and d.get("expire_at") and d["expire_at"] < now():
+        d["status"] = "expired"
+        save_order(d)
         return "expired"
     return st
 
 
-def fulfill_order(conn, order_no, paid_at=None):
+def fulfill_order(order_no, paid_at=None):
     """到账后自动发货: 卡密类 → 分配卡密; 直充类 → 生成下发任务记录。"""
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    if row is None or row["status"] not in ("pending", "paid"):
+    d = load_order(order_no)
+    if d is None or d["status"] not in ("pending", "paid"):
         return None, "订单状态不允许发货"
     paid_at = paid_at or now()
-    d = dict(row)
-    if d["delivery_way"] == 0:  # 自动发卡
+    d = dict(d)
+    note = ""
+    if d["delivery_way"] == 0:  # 自动发卡(仅本地 SQLite 卡库)
+        conn = get_db()
         cards = conn.execute(
             "SELECT id, card FROM commodity_card WHERE commodity_id=? AND used=0 "
             "ORDER BY id LIMIT ?", (d["commodity_id"], d["num"])).fetchall()
         if len(cards) < d["num"]:
+            safe_close(conn)
             return None, "卡密库存不足"
         secret = "\n".join(c["card"] for c in cards)
         for c in cards:
             conn.execute("UPDATE commodity_card SET used=1 WHERE id=?", (c["id"],))
-        conn.execute(
-            "UPDATE orders SET status='fulfilled', paid_at=?, secret=?, "
-            "note='卡密已自动发放, 可在查单中凭订单号+查询密码找回' WHERE order_no=?",
-            (paid_at, secret, order_no))
+        conn.execute("UPDATE commodity SET sales=sales+? WHERE id=?",
+                     (d["num"], d["commodity_id"]))
+        conn.commit()
+        safe_close(conn)
+        d["secret"] = secret
+        d["note"] = "卡密已自动发放, 可在查单中凭订单号+查询密码找回"
         note = "自动发货(卡密)"
     else:  # 直充: 生成下发记录
         deliver = d.get("deliver_num") or d["num"]
         note = ("已向 %s 提交任务: %s 粉(用 %sU 兑换), 系统自动处理中(预计1-5分钟开始生效)" %
                 (d["contact"], deliver, d["num"]))
-        conn.execute(
-            "UPDATE orders SET status='fulfilled', paid_at=?, "
-            "note=? WHERE order_no=?", (paid_at, note, order_no))
-    conn.execute("UPDATE commodity SET sales=sales+? WHERE id=?",
-                 (d["num"], d["commodity_id"]))
-    conn.commit()
-    return dict(conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()), note
+        d["note"] = note
+        if not REDIS.enabled:
+            conn = get_db()
+            conn.execute("UPDATE commodity SET sales=sales+? WHERE id=?",
+                         (d["num"], d["commodity_id"]))
+            conn.commit()
+            safe_close(conn)
+    d["status"] = "fulfilled"
+    d["paid_at"] = paid_at
+    save_order(d)
+    return d, note
 
 
 # --------------------------------------------------------------------------- #
@@ -489,23 +645,11 @@ def api_card():
 
 @app.get("/user/api/index/latestOrders")
 def api_latest_orders():
-    """主页「实时成交」: 读本站订单表 + 附上 epusdt 网关信息(trade_id/收款地址/实际USDT)。
-
-    DEMO 模式(默认): epusdt 字段为空, 前端不显示网关标识, 行为与之前一致。
-    真实模式(DEMO_MODE=0): 每笔成交携带 epusdt 返回的 trade_id 与一次性收款地址,
-    展示"经 Epusdt 网关确认"。注: epusdt 仅提供按 trade_id 的单笔状态查询, 无流水列表接口。
-    """
-    conn = get_db()
-    rows = conn.execute(
-        """SELECT order_no, commodity_name, unit_name, num, deliver_num, cny_total,
-                  usdt_amount, address, created_at, status,
-                  epusdt_trade_id, epusdt_address, epusdt_actual
-           FROM orders WHERE status IN ('paid','fulfilled')
-           ORDER BY created_at DESC LIMIT 12""").fetchall()
-    safe_close(conn)
+    """主页「实时成交」: 读订单(KV 线上 / SQLite 本地) + 附网关信息。"""
+    orders = list_orders(("paid", "fulfilled"), 12)
     out = []
-    for r in rows:
-        d = dict(r)
+    for d in orders:
+        d = dict(d)
         d["order_no_mask"] = "****" + d["order_no"][-4:]
         out.append(d)
     return ok(out)
@@ -603,20 +747,22 @@ def api_order_trade():
             val = ",".join(str(v) for v in val)
         widget_fields[key] = str(val)[:500]
 
-    conn.execute(
-        """INSERT INTO orders(order_no, commodity_id, commodity_name, delivery_way,
-           unit_name, num, unit_price, cny_total, rate, usdt_amount, contact,
-           widget, query_password, handle, address, status, ratio, deliver_num,
-           epusdt_trade_id, epusdt_address, epusdt_actual, created_at, expire_at)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'pending', ?,?,?,?,?,?,?)""",
-        (order_no, cid, c["name"], c["delivery_way"], c.get("unit_name", "个"),
-         num, round(USDT_RATE / ratio, 4), cny, USDT_RATE, usdt, contact,
-         json.dumps(widget_fields, ensure_ascii=False), password or "",
-         GATEWAY.name, gw.get("address", ""), ratio, deliver_num,
-         gw.get("trade_id") or "", gw.get("address") or "", gw.get("actual_amount") or "",
-         now(), expire_at))
-    conn.commit()
     safe_close(conn)
+    order = {
+        "order_no": order_no, "commodity_id": cid, "commodity_name": c["name"],
+        "delivery_way": c["delivery_way"], "unit_name": c.get("unit_name", "个"),
+        "num": num, "unit_price": round(USDT_RATE / ratio, 4), "cny_total": cny,
+        "rate": USDT_RATE, "usdt_amount": usdt, "contact": contact,
+        "widget": json.dumps(widget_fields, ensure_ascii=False),
+        "query_password": password or "", "handle": GATEWAY.name,
+        "address": gw.get("address", ""), "status": "pending", "secret": "",
+        "note": "", "ratio": ratio, "deliver_num": deliver_num,
+        "epusdt_trade_id": gw.get("trade_id") or "",
+        "epusdt_address": gw.get("address") or "",
+        "epusdt_actual": gw.get("actual_amount") or "",
+        "created_at": now(), "paid_at": "", "expire_at": expire_at,
+    }
+    save_order(order)
     log.info("新订单 %s | %s x%s(赠至%s) | ¥%.2f ≈ %.2f USDT", order_no, c["name"], num, deliver_num, cny, usdt)
     # 响应结构对齐原站: url=收银台跳转, secret=null 表示走收银台
     return ok({
@@ -632,15 +778,10 @@ def api_order_status():
     order_no = request.args.get("orderNo", "").strip()
     if not order_no:
         return err("参数错误")
-    conn = get_db()
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    if row is None:
-        safe_close(conn)
+    d = load_order(order_no)
+    if d is None:
         return err("订单不存在")
-    st = expire_order_if_needed(conn, row)
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    safe_close(conn)
-    d = dict(row)
+    st = expire_order_if_needed(d)
     d["status"] = st
     return ok({
         "order_no": d["order_no"],
@@ -673,14 +814,11 @@ def api_query():
     keywords = (body.get("keywords") or "").strip()
     if not keywords:
         return err("请输入订单号")
-    conn = get_db()
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (keywords,)).fetchone()
-    if row is None:
-        safe_close(conn)
+    d = load_order(keywords)
+    if d is None:
         return err("未查询到该订单, 请核对订单号")
-    st = expire_order_if_needed(conn, row)
-    safe_close(conn)
-    d = dict(row)
+    st = expire_order_if_needed(d)
+    d["status"] = st
     return ok({
         "order_no": d["order_no"],
         "status": st,
@@ -703,22 +841,15 @@ def api_secret():
     password = body.get("password") or ""
     if not order_no:
         return err("参数错误")
-    conn = get_db()
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    if row is None:
-        safe_close(conn)
+    d = load_order(order_no)
+    if d is None:
         return err("订单不存在")
-    d = dict(row)
     if d["status"] != "fulfilled":
-        safe_close(conn)
         return err("订单未完成, 无法查看卡密")
     if not d["secret"]:
-        safe_close(conn)
         return err("该订单无卡密(直充订单请查看任务状态)")
     if d["query_password"] and d["query_password"] != password:
-        safe_close(conn)
         return err("查询密码错误")
-    safe_close(conn)
     return ok({"secret": d["secret"]})
 
 
@@ -750,17 +881,14 @@ def epusdt_notify():
         return "ok"  # 1=等待支付, 3=已过期 —— 确认收到但不操作
     if not order_no:
         return "ok"
-    conn = get_db()
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    if row is None:
-        safe_close(conn)
+    d = load_order(order_no)
+    if d is None:
         return "ok"  # 未知订单: 确认以防重试风暴, 不落任何副作用
-    st = expire_order_if_needed(conn, row)
+    st = expire_order_if_needed(d)
     if st == "pending":
-        filled, note = fulfill_order(conn, order_no)
+        filled, note = fulfill_order(order_no)
         log.info("Epusdt 到账发货 %s -> %s | %s",
                  order_no, filled["status"] if filled else "-", note)
-    safe_close(conn)
     return "ok"
 
 
@@ -771,20 +899,15 @@ def dev_demo_pay():
     order_no = (body.get("orderNo") or "").strip()
     if not order_no:
         return err("参数错误: orderNo")
-    conn = get_db()
-    row = conn.execute("SELECT * FROM orders WHERE order_no=?", (order_no,)).fetchone()
-    if row is None:
-        safe_close(conn)
+    d = load_order(order_no)
+    if d is None:
         return err("订单不存在")
-    st = expire_order_if_needed(conn, row)
+    st = expire_order_if_needed(d)
     if st == "expired":
-        safe_close(conn)
         return err("订单已超过30分钟有效期, 已自动关闭, 请重新下单")
     if st != "pending":
-        safe_close(conn)
         return err("订单当前状态不可重复入账: " + st)
-    filled, note = fulfill_order(conn, order_no)
-    safe_close(conn)
+    filled, note = fulfill_order(order_no)
     if filled is None:
         return err(note)
     log.info("仿真到账完成 %s -> %s | %s", order_no, filled["status"], note)
