@@ -783,6 +783,11 @@ def api_order_status():
         return err("订单不存在")
     st = expire_order_if_needed(d)
     d["status"] = st
+    expire_ts = 0
+    try:
+        expire_ts = int(datetime.strptime(d["expire_at"], "%Y-%m-%d %H:%M:%S").timestamp())
+    except Exception:
+        expire_ts = 0
     return ok({
         "order_no": d["order_no"],
         "status": st,
@@ -798,6 +803,7 @@ def api_order_status():
         "address": d["address"],
         "contact": d["contact"],
         "expire_at": d["expire_at"],
+        "expire_ts": expire_ts,
         "paid_at": d["paid_at"],
         "note": d["note"],
         "delivery_way": d["delivery_way"],
@@ -819,6 +825,11 @@ def api_query():
         return err("未查询到该订单, 请核对订单号")
     st = expire_order_if_needed(d)
     d["status"] = st
+    expire_ts = 0
+    try:
+        expire_ts = int(datetime.strptime(d["expire_at"], "%Y-%m-%d %H:%M:%S").timestamp())
+    except Exception:
+        expire_ts = 0
     return ok({
         "order_no": d["order_no"],
         "status": st,

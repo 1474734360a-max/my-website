@@ -81,7 +81,7 @@
     function render(od) {
         if (!od) { if (orderNo) poll(); return; }
         let st = od.status;
-        expireTs = new Date(od.expire_at.replace(/-/g, '/')).getTime();
+        expireTs = (od.expire_ts && od.expire_ts > 0) ? od.expire_ts * 1000 : new Date(String(od.expire_at).replace(' ', 'T') + 'Z').getTime();
 
         // 已过期 -> 停止轮询
         if (st == 'expired') {
