@@ -2,7 +2,7 @@
 """
 暗网黑U承兑平台 ——  · 完整流程仿真版
 ============================================================
-网页结构/API 路由族照抄原站 heiu.org(user/api/...), 业务内容为「购买抖音粉丝(涨粉)」。
+网页结构/API 路由族照抄原站 heiu.org(user/api/...), 业务内容为「购买抖音U丝(本站专注抖音真人U丝涨U，全自动处理，7x24小时稳定到账。)」。
 
 本版本补全了原站的完整业务流程(对比旧教学版):
     tradeAmount 算价(POST) → order/trade 下单(POST) → 收银台(一次性地址+倒计时+轮询)
@@ -306,22 +306,22 @@ def seed():
         return
 
     categories = [
-        (1, "抖音涨粉", None, 1),
+        (1, "抖音涨U", None, 1),
     ]
     cur.executemany("INSERT INTO category(id,name,icon,sort) VALUES(?,?,?,?)", categories)
 
-    # 涨粉类商品无需自定义参数(抖音号即收货字段), widget 置空
+    # 涨U类商品无需自定义参数(抖音号即收货字段), widget 置空
     w_fans = ""
 
     def ws(items):
         # {"数量阈值": "该阈值起单价(元/单位)"}
         return json.dumps({str(k): str(v) for k, v in items}, ensure_ascii=False)
 
-    # ---- 商品种子: 单一业务「USDT兑换真人粉丝」, 数量即支付USDT ----
+    # ---- 商品种子: 单一业务「USDT兑换真人U丝」, 数量即支付USDT ----
     rows = [
-        (1, 1, "USDT兑换·真人高质量粉丝", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
+        (1, 1, "USDT兑换·真人高质量U丝", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
          "{}", w_fans, 6244, 1,
-         "<h5>👤 USDT兑换真人高质量粉丝</h5><p>按兑换汇率以 U 换粉：1 USDT = 1.1 粉起，下单量越大汇率越高(限时最高 1:1.65)。真实活跃账号关注，带头像带作品，不掉粉质保15天。</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看粉丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000粉以内24小时到账。</p>"),
+         "<h5>👤 USDT兑换真人高质量U丝</h5><p>按兑换汇率以 U 换U：1 USDT = 1.1 U起，下单量越大汇率越高(限时最高 1:1.65)。真实活跃账号关注，带头像带作品，不掉U质保15天。</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看U丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000U以内24小时到账。</p>"),
     ]
     for r in rows:
         UNIT_NAMES = {1: "U"}
@@ -375,14 +375,14 @@ def seed_demo_orders():
         addr = _demo_addr(i)
         save_order({
             "order_no": order_no, "commodity_id": 1,
-            "commodity_name": "USDT兑换·真人高质量粉丝", "delivery_way": 1,
+            "commodity_name": "USDT兑换·真人高质量U丝", "delivery_way": 1,
             "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
             "cny_total": round(usdt * 7.25, 2), "rate": 7.25,
             "usdt_amount": float(usdt),
             "contact": "https://v.douyin.com/" + "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
             "widget": "", "query_password": "", "handle": "simulated",
             "address": addr, "status": "fulfilled", "secret": "",
-            "note": "已下发 " + str(deliver) + " 粉", "ratio": ratio,
+            "note": "已下发 " + str(deliver) + " U", "ratio": ratio,
             "deliver_num": deliver,
             "epusdt_trade_id": "DEMO" + str(100000 + i),
             "epusdt_address": addr, "epusdt_actual": str(round(usdt, 2)),
@@ -495,7 +495,7 @@ def fulfill_order(order_no, paid_at=None):
         note = "自动发货(卡密)"
     else:  # 直充: 生成下发记录
         deliver = d.get("deliver_num") or d["num"]
-        note = ("已向 %s 提交任务: %s 粉(用 %sU 兑换), 系统自动处理中(预计1-5分钟开始生效)" %
+        note = ("已向 %s 提交任务: %s U(用 %sU 兑换), 系统自动处理中(预计1-5分钟开始生效)" %
                 (d["contact"], deliver, d["num"]))
         d["note"] = note
         if not REDIS.enabled:
@@ -534,18 +534,18 @@ def page_query():
 @app.get("/user/api/site/info")
 def api_site_info():
     notice = (
-        "<p>🎉 本站专注抖音真人粉丝涨粉，全自动处理，7x24小时稳定到账。</p>"
-        "<p>🔥 限时活动：首单满1000粉立减5%，老客户复购享9.5折(联系客服领取优惠码)。</p>"
+        "<p>🎉 实时自动黑U兑换，所有U均来自海外静止三年以上冷钱包，可进交易所，72小时内冻结全额赔付！</p>"
+        "<p>🔥 限时活动：首单满1000U立减5%，老客户复购享9.5折(联系客服领取优惠码)。</p>"
         "<p>🔊 付款方式：仅支持 USDT-TRC20 网络，地址以 T 开头；切勿充值其他资产，"
         "否则无法自动到账且难以找回，请务必核对金额与地址。</p>"
-        "<p>⚡ 付款后系统自动开始处理：1000粉以下24小时内开始到账，1000粉以上3-5天分批完成，"
-        "掉粉15天内凭订单号免费补。</p>"
-        "<p>💱 兑换汇率(按下单U数自动命中, 1 USDT = 1.1 粉起)：</p>"
+        "<p>⚡ 付款后系统自动开始处理：1000U以下24小时内开始到账，1000U以上3-5天分批完成，"
+        "掉U15天内凭订单号免费补。</p>"
+        "<p>💱 兑换汇率(按下单U数自动命中, 1 USDT = 1.1 U起)：</p>"
         "<table border=\"0\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr>"
-        "<th><p>1-100U 汇率1.1<br/>例: 下单100U<br/>100X1.1=110<br/>您将收到110粉</p></th>"
-        "<th><p>101-200U 汇率1.2<br/>例: 下单200U<br/>200X1.2=240<br/>您将收到240粉</p></th>"
-        "<th><p><font color=\"#c24f4a\">201-500U 汇率1.4<br/>例: 下单500U<br/>500X1.4=700<br/>您将收到700粉(限时)</font></p></th>"
-        "<th><p><font color=\"#c24f4a\">501U以上 汇率1.65<br/>例: 下单2000U<br/>2000X1.65=3300<br/>您将收到3300粉(限时)</font></p></th>"
+        "<th><p>1-100U 汇率1.1<br/>例: 下单100U<br/>100X1.1=110<br/>您将收到110U</p></th>"
+        "<th><p>101-200U 汇率1.2<br/>例: 下单200U<br/>200X1.2=240<br/>您将收到240U</p></th>"
+        "<th><p><font color=\"#c24f4a\">201-500U 汇率1.4<br/>例: 下单500U<br/>500X1.4=700<br/>您将收到700U(限时)</font></p></th>"
+        "<th><p><font color=\"#c24f4a\">501U以上 汇率1.65<br/>例: 下单2000U<br/>2000X1.65=3300<br/>您将收到3300U(限时)</font></p></th>"
         "</tr></tbody></table>"
     )
     faq = [
@@ -680,16 +680,16 @@ def api_trade_amount():
     if (num - c["minimum"]) % c["step"] != 0:
         return err("购买数量需为 %s 的倍数" % c["step"])
     ratio, limited = bonus_ratio(num)
-    deliver = int(num * ratio)                 # 1U = ratio 粉
+    deliver = int(num * ratio)                 # 1U = ratio U
     return ok({
-        "price": round(USDT_RATE / ratio, 4),  # 折合每粉人民币
+        "price": round(USDT_RATE / ratio, 4),  # 折合每U人民币
         "amount": float(num),                  # 应付 USDT = 下单数量
         "cny": round(num * USDT_RATE, 2),      # 折合人民币
         "rate": USDT_RATE,
-        "ratio": ratio,                        # 兑换汇率: 1U = ratio 粉
+        "ratio": ratio,                        # 兑换汇率: 1U = ratio U
         "limited": limited,
-        "deliver_num": deliver,                # 应到粉丝
-        "formula": "%s x %s = %s 粉" % (num, ratio, deliver),
+        "deliver_num": deliver,                # 应到U丝
+        "formula": "%s x %s = %s U" % (num, ratio, deliver),
         "num": num,
         "minimum": c["minimum"],
         "step": c["step"],
@@ -735,7 +735,7 @@ def api_order_trade():
     ratio, _ = bonus_ratio(num)
     usdt = float(num)                           # 支付 USDT = 下单数量
     cny = round(num * USDT_RATE, 2)             # 折合人民币
-    deliver_num = int(num * ratio)              # 应到粉丝 = USDT x 汇率
+    deliver_num = int(num * ratio)              # 应到U丝 = USDT x 汇率
 
     order_no = gen_order_no()
     gw = GATEWAY.create_order({"order_no": order_no, "amount": usdt, "cny": cny,
