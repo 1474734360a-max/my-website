@@ -1,5 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "*.vercel.app" }
+      ],
+      "destination": "https://heiu.store/:path*",
+      "permanent": true
+    }
+  ],
   "functions": {
     "app.py": {
       "maxDuration": 30,
