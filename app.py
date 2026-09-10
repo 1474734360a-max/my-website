@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 
-from flask import Flask, request, jsonify, send_from_directory, abort, Response
+from flask import Flask, request, jsonify, send_from_directory, abort, Response, redirect
 
 from gateway import build_gateway
 
@@ -948,6 +948,17 @@ def api_qr():
 # --------------------------------------------------------------------------- #
 # 静态与安全
 # --------------------------------------------------------------------------- #
+@app.before_request
+def force_canonical_domain():
+    """强制把 *.vercel.app 域名 301 跳转到 heiu.store(自定义域名)。"""
+    host = (request.host or "").lower()
+    if host.endswith(".vercel.app"):
+        target = "https://heiu.store" + request.path
+        if request.query_string:
+            target += "?" + request.query_string.decode("utf-8")
+        return redirect(target, code=301)
+
+
 @app.after_request
 def security_headers(resp):
     resp.headers["X-Content-Type-Options"] = "nosniff"
