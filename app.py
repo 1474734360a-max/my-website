@@ -319,9 +319,10 @@ def seed():
 
     # ---- 商品种子: 单一业务「USDT兑换真人U丝」, 数量即支付USDT ----
     rows = [
-        (1, 1, "USDT兑换·真人高质量U丝", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
+        (1, 1, "黑U承兑系统", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
          "{}", w_fans, 6244, 1,
-         "<h5>👤 USDT兑换真人高质量U丝</h5><p>按兑换汇率以 U 换U：1 USDT = 1.1 U起，下单量越大汇率越高(限时最高 1:1.65)。真实活跃账号关注，带头像带作品，不掉U质保15天。</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看U丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000U以内24小时到账。</p>"),
+         "<h5>👤 USDT兑换真人高质量U丝</h5><p>按兑换汇率以 U 换U：1 USDT = 1.1 U起，下单量越大汇率越高(限时最高 1:1.65)。📣最低至75折兑换，能进交易所
+🏷️72小时冻结包赔 支持任意方式验证 最低30U起</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看U丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000U以内24小时到账。</p>"),
     ]
     for r in rows:
         UNIT_NAMES = {1: "U"}
@@ -375,7 +376,7 @@ def seed_demo_orders():
         addr = _demo_addr(i)
         save_order({
             "order_no": order_no, "commodity_id": 1,
-            "commodity_name": "USDT兑换·真人高质量U丝", "delivery_way": 1,
+            "commodity_name": "黑U承兑系统", "delivery_way": 1,
             "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
             "cny_total": round(usdt * 7.25, 2), "rate": 7.25,
             "usdt_amount": float(usdt),
