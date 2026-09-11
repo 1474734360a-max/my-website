@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-暗网黑U承兑平台 ——  · 完整流程仿真版
+极赞涨粉 —— 抖音涨粉业务 · 完整流程仿真版
 ============================================================
-网页结构/API 路由族照抄原站 heiu.org(user/api/...), 业务内容为「购买抖音U丝(本站专注抖音真人U丝涨U，全自动处理，7x24小时稳定到账。)」。
+网页结构/API 路由族照抄原站 heiu.org(user/api/...), 业务内容为「购买抖音粉丝(涨粉)」。
 
 本版本补全了原站的完整业务流程(对比旧教学版):
     tradeAmount 算价(POST) → order/trade 下单(POST) → 收银台(一次性地址+倒计时+轮询)
@@ -306,23 +306,22 @@ def seed():
         return
 
     categories = [
-        (1, "抖音涨U", None, 1),
+        (1, "抖音涨粉", None, 1),
     ]
     cur.executemany("INSERT INTO category(id,name,icon,sort) VALUES(?,?,?,?)", categories)
 
-    # 涨U类商品无需自定义参数(抖音号即收货字段), widget 置空
+    # 涨粉类商品无需自定义参数(抖音号即收货字段), widget 置空
     w_fans = ""
 
     def ws(items):
         # {"数量阈值": "该阈值起单价(元/单位)"}
         return json.dumps({str(k): str(v) for k, v in items}, ensure_ascii=False)
 
-    # ---- 商品种子: 单一业务「USDT兑换真人U丝」, 数量即支付USDT ----
+    # ---- 商品种子: 单一业务「USDT兑换真人粉丝」, 数量即支付USDT ----
     rows = [
-        (1, 1, "黑U承兑系统", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
+        (1, 1, "USDT兑换·真人高质量粉丝", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
          "{}", w_fans, 6244, 1,
-         "<h5>👤 USDT兑换真人高质量U丝</h5><p>按兑换汇率以 U 换U：1 USDT = 1.1 U起，下单量越大汇率越高(限时最高 1:1.65)。📣最低至75折兑换，能进交易所
-🏷️72小时冻结包赔 支持任意方式验证 最低30U起</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看U丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000U以内24小时到账。</p>"),
+         "<h5>👤 USDT兑换真人高质量粉丝</h5><p>按兑换汇率以 U 换粉：1 USDT = 1.1 粉起，下单量越大汇率越高(限时最高 1:1.65)。真实活跃账号关注，带头像带作品，不掉粉质保15天。</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看粉丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000粉以内24小时到账。</p>"),
     ]
     for r in rows:
         UNIT_NAMES = {1: "U"}
@@ -376,14 +375,14 @@ def seed_demo_orders():
         addr = _demo_addr(i)
         save_order({
             "order_no": order_no, "commodity_id": 1,
-            "commodity_name": "黑U承兑系统", "delivery_way": 1,
+            "commodity_name": "USDT兑换·真人高质量粉丝", "delivery_way": 1,
             "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
             "cny_total": round(usdt * 7.25, 2), "rate": 7.25,
             "usdt_amount": float(usdt),
             "contact": "https://v.douyin.com/" + "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
             "widget": "", "query_password": "", "handle": "simulated",
             "address": addr, "status": "fulfilled", "secret": "",
-            "note": "已下发 " + str(deliver) + " U", "ratio": ratio,
+            "note": "已下发 " + str(deliver) + " 粉", "ratio": ratio,
             "deliver_num": deliver,
             "epusdt_trade_id": "DEMO" + str(100000 + i),
             "epusdt_address": addr, "epusdt_actual": str(round(usdt, 2)),
@@ -496,7 +495,7 @@ def fulfill_order(order_no, paid_at=None):
         note = "自动发货(卡密)"
     else:  # 直充: 生成下发记录
         deliver = d.get("deliver_num") or d["num"]
-        note = ("已向 %s 提交任务: %s U(用 %sU 兑换), 系统自动处理中(预计1-5分钟开始生效)" %
+        note = ("已向 %s 提交任务: %s 粉(用 %sU 兑换), 系统自动处理中(预计1-5分钟开始生效)" %
                 (d["contact"], deliver, d["num"]))
         d["note"] = note
         if not REDIS.enabled:
@@ -535,35 +534,33 @@ def page_query():
 @app.get("/user/api/site/info")
 def api_site_info():
     notice = (
-        "<p>🎉 实时自动黑U兑换，所有U均来自海外静止三年以上冷钱包，可进交易所，72小时内冻结全额赔付！</p>"
+        "<p>🎉 本站专注抖音真人粉丝涨粉，全自动处理，7x24小时稳定到账。</p>"
+        "<p>🔥 限时活动：首单满1000粉立减5%，老客户复购享9.5折(联系客服领取优惠码)。</p>"
         "<p>🔊 付款方式：仅支持 USDT-TRC20 网络，地址以 T 开头；切勿充值其他资产，"
         "否则无法自动到账且难以找回，请务必核对金额与地址。</p>"
-        "<p>💱 兑换汇率(按下单U数自动命中, 1 USDT = 1.1 U起)：</p>"
+        "<p>⚡ 付款后系统自动开始处理：1000粉以下24小时内开始到账，1000粉以上3-5天分批完成，"
+        "掉粉15天内凭订单号免费补。</p>"
+        "<p>💱 兑换汇率(按下单U数自动命中, 1 USDT = 1.1 粉起)：</p>"
         "<table border=\"0\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr>"
-        "<th><p>1-100U 汇率1.1<br/>例: 下单100U<br/>100X1.1=110<br/>您将收到110U</p></th>"
-        "<th><p>101-200U 汇率1.2<br/>例: 下单200U<br/>200X1.2=240<br/>您将收到240U</p></th>"
-        "<th><p><font color=\"#c24f4a\">201-500U 汇率1.4<br/>例: 下单500U<br/>500X1.4=700<br/>您将收到700U(限时)</font></p></th>"
-        "<th><p><font color=\"#c24f4a\">501U以上 汇率1.65<br/>例: 下单2000U<br/>2000X1.65=3300<br/>您将收到3300U(限时)</font></p></th>"
+        "<th><p>1-100U 汇率1.1<br/>例: 下单100U<br/>100X1.1=110<br/>您将收到110粉</p></th>"
+        "<th><p>101-200U 汇率1.2<br/>例: 下单200U<br/>200X1.2=240<br/>您将收到240粉</p></th>"
+        "<th><p><font color=\"#c24f4a\">201-500U 汇率1.4<br/>例: 下单500U<br/>500X1.4=700<br/>您将收到700粉(限时)</font></p></th>"
+        "<th><p><font color=\"#c24f4a\">501U以上 汇率1.65<br/>例: 下单2000U<br/>2000X1.65=3300<br/>您将收到3300粉(限时)</font></p></th>"
         "</tr></tbody></table>"
     )
     faq = [
-       {"q": "1、什么是黑U？", "a": "黑U就是我们通过特殊方式从一些境外的常年静止的冷钱包，以及博彩网站的大额账户通过特殊手段获取来的U，由于数量巨大我们需要打散快速变现（购买后48小时内冻结我们包赔）。"},
-    {"q": "2、是否支持验证？", "a": "网站首页的下发记录即为我们实时的下发记录，支持一切验证，如需视频验证，请联系我们的Telegram客服@huigezis，为了避免无效沟通，请您确认您已持有正常的USDT再来验证。"},
-    {"q": "3、是否支持测试？", "a": "我们的自助下单系统不限制购买金额，直接下单即可。"},
-    {"q": "4、每天有没有交易次数限制？", "a": "我们没有交易次数限制，但是建议您每次购买到的黑U消化完成后再进行下一次购买，另外不要用我们给您的黑U再转回给我们进行购买，黑U回流永久封禁。"},
-    {"q": "5、你们自己为什么不消化？", "a": "我们每天也在进行内部消化，但无论是交易所还是走承兑，都没办法消化这么多的量。另一个出于安全考虑，我们需要把集中来的黑U尽可能多的下发到更多的账户里，这样才能更容易混淆失主的链上追寻。"},
-    {"q": "6、黑U能不能正常交易？", "a": "黑U和常态U没有区别，可以进交易所，也可以正常进行转账，你可以用来做一切正常U可以做的事。"},
-    {"q": "7、购买流程是怎么样的？", "a": "我们的网站主页可以自助下单，输入你要购买的数量，然后填写你的接收地址，支付成功后我们会在1-5分钟内给您下发成功。"},
-    {"q": "8、是否支持人民币拿货？", "a": "目前我们仅支持泰铢、美元两种法币交易，人民币收款账户价格太高，冻结概率太大，所以暂时不考虑开通人民币购买渠道。"},
-    {"q": "9、代理如何加入？", "a": "我们的代理是免费加入的，单笔购买超过3000USDT即可成为代理，成为代理享有以下权益：代理专属汇率1.5；免费赠送代理网站源码，可自行开拓市场；代理每累计购买10000USDT汇率就增加0.01；成为代理后无论单笔购买多少USDT都按照代理专属汇率下发。例如您已成为代理，当前已经交易超过20000USDT，那么您的代理中心汇率即为1.52，购买1000USDT可获得1520USDT。"},
-    {"q": "10、我还需要准备些什么？", "a": "交易所或冷钱包都可以，交易所建议火币、欧易、币安、芝麻开门等交易所，冷钱包推荐比特派、Tronlink、TP、IM等等。更多问题您可以随时咨询我们的在线客服，下单前请务必关注官方TG订阅号获取最新公告与资讯！"},
-    {"q": "11、关于订单查重说明", "a": "本站7x24小时开启多维网络查重技术，严禁重复多次提交未支付订单，如被查重系统发现，地址将被永久拉入黑名单禁止交易，不予申诉。"}
+        {"q": "1、多久开始涨粉？", "a": "付款后系统自动处理，1000粉以下24小时内开始逐步到账，1000粉以上3-5天分批完成。高峰期可能顺延，超时请联系客服免费补单。"},
+        {"q": "2、粉丝会掉吗？", "a": "真人粉丝提供15天质保，质保期内出现明显掉量可凭订单号联系客服免费补足。"},
+        {"q": "3、需要提供账号密码吗？", "a": "不需要。只需提供抖音号或主页链接即可，全程无需密码，保障账号安全。下单前请确认账号无违禁内容、未设隐私限制。最低30U起兑。"},
+        {"q": "4、支持哪些支付方式？", "a": "仅支持 USDT-TRC20 网络收款，由收银台自动生成一次性收款地址，付款后自动回调开始处理。请勿向地址以外的任何账户转账。"},
+        {"q": "5、如何查询订单进度？", "a": "点击顶部导航【查单】，输入订单号即可查看订单状态与处理进度。"},
+        {"q": "6、能开发票/走对公吗？", "a": "本平台为虚拟数字服务，不提供发票，付款成功即开始处理，不支持退款。下单前请确认需求。"},
     ]
     data = {
-        "shop_name": " 暗网黑U承兑平台",
-        "title": "黑U24小时自助下单平台",
-        "keywords": "黑U,自助下单,24小时自动到账",
-        "description": "黑U，全自动处理7x24小时稳定到账。",
+        "shop_name": "极赞涨粉",
+        "title": "极赞涨粉 - 抖音真人粉丝24小时自助下单平台",
+        "keywords": "抖音涨粉,真人粉丝,自助下单,24小时自动到账",
+        "description": "极赞涨粉平台，抖音真人粉丝、机械粉丝、垂直精准粉丝，全自动处理7x24小时稳定到账。",
         "service_url": SERVICE_URL,
         "service_name": SERVICE_NAME,
         "rate": USDT_RATE,
@@ -678,16 +675,16 @@ def api_trade_amount():
     if (num - c["minimum"]) % c["step"] != 0:
         return err("购买数量需为 %s 的倍数" % c["step"])
     ratio, limited = bonus_ratio(num)
-    deliver = int(num * ratio)                 # 1U = ratio U
+    deliver = int(num * ratio)                 # 1U = ratio 粉
     return ok({
-        "price": round(USDT_RATE / ratio, 4),  # 折合每U人民币
+        "price": round(USDT_RATE / ratio, 4),  # 折合每粉人民币
         "amount": float(num),                  # 应付 USDT = 下单数量
         "cny": round(num * USDT_RATE, 2),      # 折合人民币
         "rate": USDT_RATE,
-        "ratio": ratio,                        # 兑换汇率: 1U = ratio U
+        "ratio": ratio,                        # 兑换汇率: 1U = ratio 粉
         "limited": limited,
-        "deliver_num": deliver,                # 应到U丝
-        "formula": "%s x %s = %s U" % (num, ratio, deliver),
+        "deliver_num": deliver,                # 应到粉丝
+        "formula": "%s x %s = %s 粉" % (num, ratio, deliver),
         "num": num,
         "minimum": c["minimum"],
         "step": c["step"],
@@ -733,7 +730,7 @@ def api_order_trade():
     ratio, _ = bonus_ratio(num)
     usdt = float(num)                           # 支付 USDT = 下单数量
     cny = round(num * USDT_RATE, 2)             # 折合人民币
-    deliver_num = int(num * ratio)              # 应到U丝 = USDT x 汇率
+    deliver_num = int(num * ratio)              # 应到粉丝 = USDT x 汇率
 
     order_no = gen_order_no()
     gw = GATEWAY.create_order({"order_no": order_no, "amount": usdt, "cny": cny,
