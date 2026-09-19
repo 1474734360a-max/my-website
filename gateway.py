@@ -39,13 +39,14 @@ def _fake_trc20(seed_text: str) -> str:
 
 
 class SimulatedGateway:
-    """全仿真通道：只生成假地址，不触网、不收真钱。"""
+    """全仿真通道：收款地址固定指向商家 TRC20 钱包(不触网、不收真钱)。"""
 
     name = "simulated"
     deliver_on_pay = True  # 到账即自动发货(仿真)
 
     def create_order(self, order: dict) -> dict:
-        address = _fake_trc20(order["order_no"])
+        # 演示收款地址: 固定用商家钱包。可用环境变量 DEMO_RECEIVE_ADDRESS 覆盖。
+        address = os.environ.get("DEMO_RECEIVE_ADDRESS") or "TVy2NNV6cPYAr6W2c1Krj8Q8vbavZQmBhb"
         try:
             expire = int(os.environ.get("ORDER_EXPIRE_SECONDS") or 1800)  # 空串兜底
         except (TypeError, ValueError):
