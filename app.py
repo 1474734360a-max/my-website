@@ -35,8 +35,8 @@ DB_PATH = DATA_DIR / "dylikes.db"
 
 DEMO_MODE = os.environ.get("DEMO_MODE", "1") == "1"
 USDT_RATE = float(os.environ.get("USDT_RATE") or "7.25")          # 1 USDT ≈ N 人民币
-SERVICE_URL = os.environ.get("SERVICE_URL", "https://t.me/huigezis")
-SERVICE_NAME = os.environ.get("SERVICE_NAME", "在线客服")
+SERVICE_URL = os.environ.get("SERVICE_URL") or "https://t.me/huigezis"
+SERVICE_NAME = os.environ.get("SERVICE_NAME") or "在线客服"
 ORDER_EXPIRE = int(os.environ.get("ORDER_EXPIRE_SECONDS") or "1800")
 
 logging.basicConfig(level=logging.INFO,
