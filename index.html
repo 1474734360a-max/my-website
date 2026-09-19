@@ -12,7 +12,7 @@
     <script src="/assets/static/layer/layer.js"></script>
     <script src="/assets/static/pay.js?v=1.0"></script>
     <script src="/assets/static/clipboard.js"></script>
-    <title>暗网黑U承兑平台 - 黑U承兑24小时自助下单平台</title>
+    <title>暗网黑U承兑平台 - 诚信第一的黑U兑换平台</title>
 </head>
 <body>
 <div id="app">
@@ -42,8 +42,8 @@
 
         <!-- 自助下单 (单一业务) -->
         <div class="card" id="orderCard">
-            <div class="card-hd"><i class="fa fa-file-text-o hd-ico" aria-hidden="true"></i> 自助下单
-                <span class="hd-more">U 黑U承兑 · 全自动处理</span></div>
+            <div class="card-hd"><i class="fa fa-file-text-o hd-ico" aria-hidden="true"></i> 购买
+                            <span class="hd-more">黑U承兑 · 全自动处理</span></div>
             <div class="card-bd">
                 <form class="commodity">
                     <div id="dCoverBox"></div>
@@ -62,8 +62,8 @@
 
                     <!-- 收货/回填 -->
                     <div class="form-line" id="contactLine">
-                        <label id="contactLabel">回U地址/主页：</label>
-                        <input class="finput full" name="contact" id="contactInput" placeholder="粘贴您的抖音号或主页链接, 例如 https://v.douyin.com/xxxx/">
+                        <label id="contactLabel">回U地址：</label>
+                                                <input class="finput full" name="contact" id="contactInput" placeholder="请填写您的回U地址(TRC20, 以T开头)">
                     </div>
 
                     <!-- 查询密码(卡密类) -->
@@ -74,7 +74,7 @@
 
                     <!-- 数量 -->
                     <div class="form-line">
-                        <label>购买数量：</label>
+                        <label>承兑数量：</label>
                         <div class="qty-wrap">
                             <button type="button" class="qty-btn" id="qtyMinus">−</button>
                             <input class="qty-input" name="num" id="numInput" type="number" value="0" min="1">
@@ -92,10 +92,10 @@
 
                     <!-- 金额 -->
                     <div class="bill-box">
-                        <div class="bill-row"><span>兑换汇率</span><span class="v" id="billRatio">-</span></div>
+                        <div class="bill-row"><span>当前汇率</span><span class="v" id="billRatio">-</span></div>
                         <div class="bill-row"><span>计算公式</span><span class="v" id="billFormula">-</span></div>
                         <div class="bill-row"><span>应到金额</span><span class="v text-brand" id="billDeliver">-</span></div>
-                        <div class="bill-row bill-total"><span>支付金额 (USDT-TRC20)</span>
+                        <div class="bill-row bill-total"><span>承兑金额 (USDT-TRC20)</span>
                             <span class="v"><span class="usdt-num" id="billUsdt">-</span>
                             <small style="color:#8a8f99;">≈ 汇率 1U=<span id="billRate">-</span>元</small></span>
                         </div>
@@ -113,7 +113,7 @@
         <!-- USDT下发记录 (接入 Epusdt 网关) -->
         <div class="card">
             <div class="card-hd"><i class="fa fa-bolt hd-ico" aria-hidden="true"></i> USDT下发记录
-                <span class="hd-more">Epusdt 网关 · 每20秒刷新</span></div>
+                <span class="hd-more">实时下发 · 每20秒刷新</span></div>
             <div class="card-bd" style="padding:0;">
                 <table class="table table-hover deal-table">
                     <thead>
@@ -140,8 +140,8 @@
 
     <div class="footer">
         <p id="footerService">© 黑U承兑 · 7x24小时全自动到账 | 仅支持 USDT-TRC20 网络付款</p>
-        <p>虚拟商品一经售出概不退款 · 请在下单前仔细核对链接与数量</p>
-    </div>
+        <p>本站7x24小时开启多维网络查重技术，严禁重复多次提交未支付订单，如被查重系统发现，地址将被永久拉入黑名单禁止交易，不予申诉。</p>
+            </div>
 </div>
 
 <script>
@@ -189,8 +189,8 @@
             let h = '';
             ratioTiers.forEach((t, i) => {
                 let range = t.max == null ? (t.min + 'U以上') : (t.min + '-' + t.max + 'U');
-                h += '<span class="ws-tier" data-tier="' + i + '">' + range + ' · 1U=' + t.ratio + '粉' +
-                     (t.limited ? '<em>限时</em>' : '') + '</span>';
+                h += '<span class="ws-tier" data-tier="' + i + '">' + range + ' · 1U=' + t.ratio + 'U' +
+                                     (t.limited ? '<em>限时</em>' : '') + '</span>';
             });
             $('#wsTiers').html(h);
             // 重建后按当前数量重新高亮
@@ -342,9 +342,9 @@
         clearTimeout(amountTimer);
         amountTimer = setTimeout(() => {
             Pay.getTradeAmount(globalCommodityId, '', 0, num, '', res => {
-                $('#billRatio').html('1 U = ' + res.ratio + ' 粉' + (res.limited ? ' <small style="color:#c24f4a;font-weight:700;">(限时)</small>' : ''));
-                $('#billFormula').text(res.formula);
-                $('#billDeliver').text(res.deliver_num + ' 粉');
+                $('#billRatio').html('1 U = ' + res.ratio + ' U' + (res.limited ? ' <small style="color:#c24f4a;font-weight:700;">(限时)</small>' : ''));
+                                $('#billFormula').text(res.formula);
+                                $('#billDeliver').text(res.deliver_num + ' U');
                 let vi = ratioTiers.findIndex(t => t.ratio == res.ratio);
                 $('.ws-tier').removeClass('cur');
                 if (vi >= 0) $('.ws-tier[data-tier="' + vi + '"]').addClass('cur');
@@ -387,7 +387,7 @@
         }
         let contact = ($('#contactInput').val() || '').trim();
         if (c.delivery_way == 1 && !contact) {
-            layer.msg('请填写您要涨粉的抖音号或主页链接'); return;
+            layer.msg('请填写回U地址'); return;
         }
         let password = ($('#passwordInput').val() || '');
         if (c.password_status == 1 && password.length < 6) {

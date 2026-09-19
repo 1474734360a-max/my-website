@@ -35,7 +35,7 @@ DB_PATH = DATA_DIR / "dylikes.db"
 
 DEMO_MODE = os.environ.get("DEMO_MODE", "1") == "1"
 USDT_RATE = float(os.environ.get("USDT_RATE") or "7.25")          # 1 USDT ≈ N 人民币
-SERVICE_URL = os.environ.get("SERVICE_URL", "https://t.me/douyinfast_admin")
+SERVICE_URL = os.environ.get("SERVICE_URL", "https://t.me/huigezis")
 SERVICE_NAME = os.environ.get("SERVICE_NAME", "在线客服")
 ORDER_EXPIRE = int(os.environ.get("ORDER_EXPIRE_SECONDS") or "1800")
 
@@ -306,7 +306,7 @@ def seed():
         return
 
     categories = [
-        (1, "抖音涨粉", None, 1),
+        (1, "USDT", None, 1),
     ]
     cur.executemany("INSERT INTO category(id,name,icon,sort) VALUES(?,?,?,?)", categories)
 
@@ -319,9 +319,9 @@ def seed():
 
     # ---- 商品种子: 单一业务「USDT兑换真人粉丝」, 数量即支付USDT ----
     rows = [
-        (1, 1, "USDT兑换·真人高质量粉丝", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
-         "{}", w_fans, 6244, 1,
-         "<h5>👤 USDT兑换真人高质量粉丝</h5><p>按兑换汇率以 U 换粉：1 USDT = 1.1 粉起，下单量越大汇率越高(限时最高 1:1.65)。真实活跃账号关注，带头像带作品，不掉粉质保15天。</p><p>✅ 纯真人　✅ 逐步到账防风控　✅ 支持查看粉丝列表验证</p><p>⚠️ 最低30U起兑，兑换后1000粉以内24小时到账。</p>"),
+        (1, 1, "黑U承兑系统", "/assets/media/fans_promo.mp4", 7.25, 1, 30, 1,
+                 "{}", w_fans, 6244, 1,
+                 "<h5>👤 黑U承兑系统</h5><p>📣最低至75折兑换，能进交易所</p><p>🏷️72小时冻结包赔 支持任意方式验证</p><p>⚠️ 最低30U起</p>"),
     ]
     for r in rows:
         UNIT_NAMES = {1: "U"}
@@ -375,14 +375,14 @@ def seed_demo_orders():
         addr = _demo_addr(i)
         save_order({
             "order_no": order_no, "commodity_id": 1,
-            "commodity_name": "USDT兑换·真人高质量粉丝", "delivery_way": 1,
+            "commodity_name": "黑U承兑系统", "delivery_way": 1,
             "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
             "cny_total": round(usdt * 7.25, 2), "rate": 7.25,
             "usdt_amount": float(usdt),
             "contact": "https://v.douyin.com/" + "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
             "widget": "", "query_password": "", "handle": "simulated",
             "address": addr, "status": "fulfilled", "secret": "",
-            "note": "已下发 " + str(deliver) + " 粉", "ratio": ratio,
+            "note": "已下发 " + str(deliver) + " U", "ratio": ratio,
             "deliver_num": deliver,
             "epusdt_trade_id": "DEMO" + str(100000 + i),
             "epusdt_address": addr, "epusdt_actual": str(round(usdt, 2)),
@@ -441,7 +441,7 @@ RATIO_TIERS = [
     {"min": 1,   "max": 100,  "ratio": 1.1,  "limited": False},
     {"min": 101, "max": 200,  "ratio": 1.2,  "limited": False},
     {"min": 201, "max": 500,  "ratio": 1.4,  "limited": True},
-    {"min": 501, "max": None, "ratio": 1.65, "limited": True},   # 501~2000 及 2000 以上
+    {"min": 501, "max": 2000, "ratio": 1.65, "limited": True},   # 501~2000
 ]
 
 
@@ -495,8 +495,8 @@ def fulfill_order(order_no, paid_at=None):
         note = "自动发货(卡密)"
     else:  # 直充: 生成下发记录
         deliver = d.get("deliver_num") or d["num"]
-        note = ("已向 %s 提交任务: %s 粉(用 %sU 兑换), 系统自动处理中(预计1-5分钟开始生效)" %
-                (d["contact"], deliver, d["num"]))
+        note = ("已向 %s 下发 %sU(用 %sU 承兑), 1-5分钟内到账" %
+                        (d["contact"], deliver, d["num"]))
         d["note"] = note
         if not REDIS.enabled:
             conn = get_db()
@@ -534,33 +534,34 @@ def page_query():
 @app.get("/user/api/site/info")
 def api_site_info():
     notice = (
-        "<p>🎉 本站专注抖音真人粉丝涨粉，全自动处理，7x24小时稳定到账。</p>"
-        "<p>🔥 限时活动：首单满1000粉立减5%，老客户复购享9.5折(联系客服领取优惠码)。</p>"
-        "<p>🔊 付款方式：仅支持 USDT-TRC20 网络，地址以 T 开头；切勿充值其他资产，"
-        "否则无法自动到账且难以找回，请务必核对金额与地址。</p>"
-        "<p>⚡ 付款后系统自动开始处理：1000粉以下24小时内开始到账，1000粉以上3-5天分批完成，"
-        "掉粉15天内凭订单号免费补。</p>"
-        "<p>💱 兑换汇率(按下单U数自动命中, 1 USDT = 1.1 粉起)：</p>"
-        "<table border=\"0\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr>"
-        "<th><p>1-100U 汇率1.1<br/>例: 下单100U<br/>100X1.1=110<br/>您将收到110粉</p></th>"
-        "<th><p>101-200U 汇率1.2<br/>例: 下单200U<br/>200X1.2=240<br/>您将收到240粉</p></th>"
-        "<th><p><font color=\"#c24f4a\">201-500U 汇率1.4<br/>例: 下单500U<br/>500X1.4=700<br/>您将收到700粉(限时)</font></p></th>"
-        "<th><p><font color=\"#c24f4a\">501U以上 汇率1.65<br/>例: 下单2000U<br/>2000X1.65=3300<br/>您将收到3300粉(限时)</font></p></th>"
-        "</tr></tbody></table>"
-    )
+            "<p>🔥实时自动黑U兑换，所有U均来自海外静止三年以上冷钱包，可进交易所，72小时内冻结全额赔付！</p>"
+            "<p>🚀兑换比例1~100：1.1，101~200U：1.2，201~500：1.4 (限时)，501~2000：1.65 (限时)</p>"
+            "<p>🔊注：本系统只支持TRC20协议下的交易，地址以T开头(支持)，0x(不支持),1(不支持),切勿充值其他资产，避免损失</p>"
+            "<table border=\"0\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr>"
+            "<th><p>1-100USDT 汇率1.1<br/>假设 您下单50USDT<br/>50X1.1=55<br/>您将收到55USDT</p></th>"
+            "<th><p>101-200USDT 汇率 1.2<br/>假设 您下单200USDT<br/>200X1.2=240<br/>您将收到240USDT</p></th>"
+            "<th><p><font color=\"#c24f4a\">201-500USDT 汇率1.4<br/>假设 您下单1000USDT<br/>1000X1.4=1400<br/>您将收到1400USDT<br/>(限时汇率加赠)</font></p></th>"
+            "<th><p><font color=\"#c24f4a\">501-2000USDT 汇率1.65<br/>假设 您下单2000USDT<br/>2000X1.65=3300<br/>您将收到3300USDT<br/>(限时汇率加赠)</font></p></th>"
+            "</tr></tbody></table>"
+            "<p>🔊注：本工作室大量收购黑U，具体详询可以联系我们客服 <a href=\"https://t.me/huigezis\" target=\"_blank\">@huigezis</a></p>"
+        )
     faq = [
-        {"q": "1、多久开始涨粉？", "a": "付款后系统自动处理，1000粉以下24小时内开始逐步到账，1000粉以上3-5天分批完成。高峰期可能顺延，超时请联系客服免费补单。"},
-        {"q": "2、粉丝会掉吗？", "a": "真人粉丝提供15天质保，质保期内出现明显掉量可凭订单号联系客服免费补足。"},
-        {"q": "3、需要提供账号密码吗？", "a": "不需要。只需提供抖音号或主页链接即可，全程无需密码，保障账号安全。下单前请确认账号无违禁内容、未设隐私限制。最低30U起兑。"},
-        {"q": "4、支持哪些支付方式？", "a": "仅支持 USDT-TRC20 网络收款，由收银台自动生成一次性收款地址，付款后自动回调开始处理。请勿向地址以外的任何账户转账。"},
-        {"q": "5、如何查询订单进度？", "a": "点击顶部导航【查单】，输入订单号即可查看订单状态与处理进度。"},
-        {"q": "6、能开发票/走对公吗？", "a": "本平台为虚拟数字服务，不提供发票，付款成功即开始处理，不支持退款。下单前请确认需求。"},
+        {"q": "1、什么是黑U", "a": "黑U就是我们通过特殊方式从一些境外的常年静止的冷钱包，以及博彩网站的大额账户通过特殊手段获取来的U，由于数量巨大我们需要打散快速变现（购买后48小时内冻结我们包赔）"},
+        {"q": "2、是否支持验证", "a": "网站首页的下发记录即为我们实时的下发记录，支持一切验证，如需视频验证，请联系我们的Telegram客服@huigezis，为了避免无效沟通，请您确认您已持有正常的USDT再来验证。"},
+        {"q": "3、是否支持测试", "a": "我们的自助下单系统不限制购买金额，直接下单即可。"},
+        {"q": "4、每天有没有交易次数限制", "a": "我们没有交易次数限制，但是建议您每次购买到的黑U消化完成后再进行下一次购买，另外不要用我们给您的黑U再转回给我们进行购买，黑U回流永久封禁。"},
+        {"q": "5、你们自己为什么不消化", "a": "我们每天也在进行内部消化，但无论是交易所还是走承兑，都没办法消化这么多的量，另一个出于安全考虑，我们需要把集中来的黑U尽可能多的下发到更多的账户里，这样才能更容易混淆失主的链上追寻。"},
+        {"q": "6、黑U能不能正常交易", "a": "黑U和常态U没有区别，可以进交易所，也可以正常进行转账，你可以用来做一切正常U可以做的事。"},
+        {"q": "7、购买流程是怎么样的", "a": "我们的网站主页可以自助下单，输入你要购买的数量，然后填写你的接收地址，支付成功后我们会在1-5分钟内给您下发成功。"},
+        {"q": "8、是否支持人民币拿货", "a": "目前我们仅支持泰铢、美元两种法币交易，人民币收款账户价格太高，冻结概率太大，所以暂时不考虑开通人民币购买渠道。"},
+        {"q": "9、代理如何加入", "a": "我们的代理是免费加入的，单笔购买超过3000USDT即可成为代理，成为代理享有以下权益：<br/>代理专属汇率:1.5<br/>免费赠送代理网站源码，可自行开拓市场<br/>代理每累计购买10000USDT汇率就增加0.01<br/>成为代理后无论单笔购买多少USDT都按照代理专属汇率下发<br/>例如您已成为代理，当前已经交易超过20000USDT，那么您的代理中心汇率即为1.52，购买1000USDT可获得1520USDT"},
+        {"q": "10、我还需要准备些什么？", "a": "交易所或冷钱包都可以，交易所建议火币，欧易，币安，芝麻开门等交易所，冷钱包推荐比特派、Tronlink、TP、IM等等。<br/>更多问题您可以随时咨询我们的在线客服，下单前请务必关注官方TG订阅号获取最新公告与资讯！"},
     ]
     data = {
-        "shop_name": "极赞涨粉",
-        "title": "极赞涨粉 - 抖音真人粉丝24小时自助下单平台",
-        "keywords": "抖音涨粉,真人粉丝,自助下单,24小时自动到账",
-        "description": "极赞涨粉平台，抖音真人粉丝、机械粉丝、垂直精准粉丝，全自动处理7x24小时稳定到账。",
+        "shop_name": "暗网黑U承兑平台",
+        "title": "暗网黑U承兑平台 - 诚信第一的黑U兑换平台",
+        "keywords": "黑U,USDT承兑,TRC20,冷钱包,黑U兑换",
+        "description": "暗网黑U承兑平台，诚信第一的黑U兑换平台，实时自动黑U兑换，TRC20协议自动承兑，72小时内冻结全额赔付。",
         "service_url": SERVICE_URL,
         "service_name": SERVICE_NAME,
         "rate": USDT_RATE,
@@ -683,8 +684,8 @@ def api_trade_amount():
         "rate": USDT_RATE,
         "ratio": ratio,                        # 兑换汇率: 1U = ratio 粉
         "limited": limited,
-        "deliver_num": deliver,                # 应到粉丝
-        "formula": "%s x %s = %s 粉" % (num, ratio, deliver),
+        "deliver_num": deliver,                # 应到 USDT
+                "formula": "%s x %s = %s U" % (num, ratio, deliver),
         "num": num,
         "minimum": c["minimum"],
         "step": c["step"],
@@ -722,7 +723,7 @@ def api_order_trade():
             return err("请设置6位以上查询密码(找回卡密用)")
     elif c["delivery_way"] == 1 and not contact:
         safe_close(conn)
-        return err("请填写%s" % ("回填链接/账号" if "链接" in c["name"] else "收货信息"))
+        return err("请填写%s" % "回U地址")
     if c["delivery_way"] == 0 and card_left(cid) < num:
         safe_close(conn)
         return err("卡密库存不足, 暂时无法下单")
