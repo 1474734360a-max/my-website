@@ -13,7 +13,7 @@
   "functions": {
     "app.py": {
       "maxDuration": 30,
-      "excludeFiles": "{data/**,dev/**,.venv/**,assets/media/fans_promo.mp4}"
+      "excludeFiles": "{data/**,dev/**,.venv/**}"
     }
   },
   "routes": [
