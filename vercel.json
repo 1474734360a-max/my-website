@@ -1,11 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/user/api/index/latestOrders",
-      "schedule": "0 * * * *"
-    }
-  ],
   "redirects": [
     {
       "source": "/:path*",
