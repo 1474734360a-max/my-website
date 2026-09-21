@@ -353,8 +353,34 @@ def _demo_addr(seed_i: int) -> str:
     return "".join(out)
 
 
+def _make_demo_order(ts, usdt, seed_i: int) -> dict:
+    """按时间+金额构造一条仿真「已下发」记录(seed 与滚动追加共用)。"""
+    from datetime import timedelta
+    if usdt <= 100: ratio = 1.1
+    elif usdt <= 200: ratio = 1.2
+    elif usdt <= 500: ratio = 1.4
+    else: ratio = 1.65
+    deliver = int(usdt * ratio)
+    addr = _demo_addr(seed_i)
+    return {
+        "order_no": ts.strftime("%Y%m%d%H%M%S") + "%04d" % (1000 + seed_i % 9000),
+        "commodity_id": 1, "commodity_name": "黑U承兑系统", "delivery_way": 1,
+        "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
+        "cny_total": round(usdt * 7.25, 2), "rate": 7.25, "usdt_amount": float(usdt),
+        "contact": "https://v.douyin.com/" + "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
+        "widget": "", "query_password": "", "handle": "simulated",
+        "address": addr, "status": "fulfilled", "secret": "",
+        "note": "已下发 " + str(deliver) + " U", "ratio": ratio, "deliver_num": deliver,
+        "epusdt_trade_id": "DEMO" + str(200000 + seed_i),
+        "epusdt_address": addr, "epusdt_actual": str(round(usdt, 2)),
+        "created_at": ts.strftime("%Y-%m-%d %H:%M:%S"),
+        "paid_at": ts.strftime("%Y-%m-%d %H:%M:%S"),
+        "expire_at": (ts + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
 def seed_demo_orders():
-    """撑场面演示数据: 无任何已支付/已完成订单时, 生成一批仿真"已下发"记录。
+    """撑场面演示数据: 无任何已支付/已完成订单时, 生成一批仿真「已下发」记录。
     幂等: 已有 paid/fulfilled 订单则跳过(线上以 KV 为准)。"""
     if list_orders(("paid", "fulfilled"), 1):
         return
@@ -366,31 +392,39 @@ def seed_demo_orders():
     ]
     for i, (hours_ago, usdt) in enumerate(samples):
         ts = datetime.now() - timedelta(hours=hours_ago)
-        order_no = ts.strftime("%Y%m%d%H%M%S") + "%04d" % (1000 + i)
-        if usdt <= 100: ratio = 1.1
-        elif usdt <= 200: ratio = 1.2
-        elif usdt <= 500: ratio = 1.4
-        else: ratio = 1.65
-        deliver = int(usdt * ratio)
-        addr = _demo_addr(i)
-        save_order({
-            "order_no": order_no, "commodity_id": 1,
-            "commodity_name": "黑U承兑系统", "delivery_way": 1,
-            "unit_name": "U", "num": usdt, "unit_price": round(7.25 / ratio, 4),
-            "cny_total": round(usdt * 7.25, 2), "rate": 7.25,
-            "usdt_amount": float(usdt),
-            "contact": "https://v.douyin.com/" + "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8)) + "/",
-            "widget": "", "query_password": "", "handle": "simulated",
-            "address": addr, "status": "fulfilled", "secret": "",
-            "note": "已下发 " + str(deliver) + " U", "ratio": ratio,
-            "deliver_num": deliver,
-            "epusdt_trade_id": "DEMO" + str(100000 + i),
-            "epusdt_address": addr, "epusdt_actual": str(round(usdt, 2)),
-            "created_at": ts.strftime("%Y-%m-%d %H:%M:%S"),
-            "paid_at": ts.strftime("%Y-%m-%d %H:%M:%S"),
-            "expire_at": (ts + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S"),
-        })
+        save_order(_make_demo_order(ts, usdt, i))
     log.info("演示数据: 已生成 %d 条仿真下发记录", len(samples))
+
+
+DEMO_FRESH_MINUTES = float(os.environ.get("DEMO_FRESH_MINUTES") or "60")
+
+
+def ensure_fresh_demo_orders():
+    """让「USDT下发记录」像原站一样持续滚动更新:
+    节奏=每天约 20~26 条(阈值 60 分钟, Vercel Cron 每小时触发一次,
+    页面轮询与人访问错峰)。每次触发时若最近一条距今超过阈值则追加新记录,
+    保证任何时刻打开页面都有近期的下发记录, 且长期源源不断。"""
+    latest = list_orders(("paid", "fulfilled"), 1)
+    if not latest:
+        seed_demo_orders()
+        return
+    try:
+        last_ts = datetime.strptime(latest[0]["created_at"], "%Y-%m-%d %H:%M:%S")
+    except (KeyError, ValueError, TypeError):
+        return
+    gap_min = (datetime.now() - last_ts).total_seconds() / 60.0
+    if gap_min < DEMO_FRESH_MINUTES:
+        return
+    n = random.choices([1, 2], weights=[80, 20])[0]
+    for i in range(n):
+        ts = datetime.now() - timedelta(seconds=random.randint(0, max(1, int(gap_min * 60) - 60)),
+                                        microseconds=random.randint(0, 999999))
+        usdt = random.choices(
+            [random.randint(30, 500), random.randint(500, 3000),
+             random.randint(3000, 20000), round(random.uniform(20000, 80000), 2)],
+            weights=[4, 3, 2, 1])[0]
+        save_order(_make_demo_order(ts, usdt, random.randint(0, 999999)))
+    log.info("演示数据: 滚动追加 %d 条仿真下发记录(距上条 %.1f 分钟)", n, gap_min)
 
 
 # --------------------------------------------------------------------------- #
@@ -646,7 +680,8 @@ def api_card():
 
 @app.get("/user/api/index/latestOrders")
 def api_latest_orders():
-    """主页「实时成交」: 读订单(KV 线上 / SQLite 本地) + 附网关信息。"""
+    """主页「实时成交」: 先滚动补新演示记录, 再读订单(KV 线上 / SQLite 本地)。"""
+    ensure_fresh_demo_orders()
     orders = list_orders(("paid", "fulfilled"), 12)
     out = []
     for d in orders:
