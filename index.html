@@ -415,6 +415,16 @@
     });
 
     // ---------------- 实时成交 ----------------
+    function fmtLocal(ts) {
+        // 后端 created_at 为 UTC 字符串 -> 转浏览器本地时区显示
+        if (!ts) return '';
+        let d = new Date(ts.replace(' ', 'T') + 'Z');
+        if (isNaN(d)) return ts.substring(0, 19);
+        let p = n => String(n).padStart(2, '0');
+        return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) +
+               ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    }
+
     function loadDeals() {
         $.get('/user/api/index/latestOrders', res => {
             if (res.code != 200) return;
@@ -425,7 +435,7 @@
             }
             let html = '';
             rows.forEach(o => {
-                let t = (o.created_at || '').substring(0, 19).replace(/-/g, '/');
+                let t = fmtLocal(o.created_at);
                 // 承兑地址: 真实模式取 epusdt 一次性收款地址, DEMO 用仿真地址
                 let addr = o.epusdt_address || o.address || '';
                 // 承兑金额: 真实模式取 epusdt 实际USDT, DEMO 用应付USDT
