@@ -691,6 +691,22 @@ def api_latest_orders():
     return ok(out)
 
 
+@app.get("/dev/probe")
+def dev_probe():
+    """诊断探针(演示用): 暴露 KV 状态与滚动追加是否工作。"""
+    before = list_orders(("paid", "fulfilled"), 1)
+    before_at = before[0].get("created_at") if before else None
+    ensure_fresh_demo_orders()
+    after = list_orders(("paid", "fulfilled"), 3)
+    return ok({
+        "kv_enabled": REDIS.enabled,
+        "demo_fresh_minutes": DEMO_FRESH_MINUTES,
+        "before_latest": before_at,
+        "after_latest": [o.get("created_at") for o in after],
+        "count": len(after),
+    })
+
+
 # --------------------------------------------------------------------------- #
 # 业务 POST API(算价 / 下单 / 查单 / 取卡密) —— 原站完整流程
 # --------------------------------------------------------------------------- #
